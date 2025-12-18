@@ -13,53 +13,59 @@ interface Testimonial {
   content: string
   rating: number
   avatar: string
+  avatarUrl: string
 }
 
 const testimonials: Testimonial[] = [
   {
     id: '1',
-    name: 'Zeus Charles',
+    name: 'Daniel Adebayo',
     role: 'Founder',
-    company: 'MonsterfitHQ',
-    content: 'Odysia transformed our fitness app development from a nightmare into a dream. Their managed approach and escrow system gave us complete confidence. The expert they connected us with delivered beyond our expectations, and the platform handled all the complex logistics seamlessly.',
+    company: 'Fintech Startup',
+    content: 'We came to Odysia with a rough idea and no technical team. Within weeks, they helped us clarify the product scope, designed the interface, and shipped a working web app. What stood out was how clearly they communicated trade-offs and timelines. No fluff. Just steady progress and delivery.',
     rating: 5,
-    avatar: 'Z'
+    avatar: 'D',
+    avatarUrl: '/images/testimonials/daniel-adebayo.png'
   },
   {
     id: '2',
-    name: 'Clement Seyon',
-    role: 'COO',
-    company: 'NeutrLabs',
-    content: 'As COO of NeutrLabs, I was skeptical about managed tech platforms, but Odysia proved me wrong. Their vetting process is exceptional, and the escrow system ensures we only pay for quality work. The project management tools are intuitive and keep everything on track.',
+    name: 'Ifunanya Okeke',
+    role: 'Managing Director',
+    company: 'Retail & Services SME',
+    content: 'Our old website looked fine but converted poorly. Odysia rebuilt it with speed and structure in mind. Page load time dropped, and inquiries started coming in consistently. They explained every decision in plain language and didn’t oversell anything.',
     rating: 5,
-    avatar: 'C'
+    avatar: 'I',
+    avatarUrl: '/images/testimonials/ifunanya-okeke.png'
   },
   {
     id: '3',
-    name: 'Anna Hannah',
-    role: 'CEO',
-    company: 'SEO Glams',
-    content: 'Odysia has been instrumental in scaling our digital marketing platform. The quality of developers they provide is consistently outstanding. Their managed approach saves us countless hours of project management, and the payment protection gives us peace of mind.',
+    name: 'Michael Thompson',
+    role: 'Operations Lead',
+    company: 'Digital Design Agency',
+    content: 'We needed reliable frontend developers on short notice. Odysia matched us with vetted talent that integrated smoothly into our workflow. The handoff was clean, and the developers required very little ramp-up. It saved us weeks of hiring effort.',
     rating: 5,
-    avatar: 'A'
+    avatar: 'M',
+    avatarUrl: '/images/testimonials/michael-thompson.png'
   },
   {
     id: '4',
-    name: 'Mike Rodriguez',
-    role: 'Full-Stack Developer',
-    company: 'CodeCraft',
-    content: 'As an expert on Odysia, I\'ve found consistent, well-paying projects. The platform handles all the logistics so I can focus on coding.',
+    name: 'Tunde Balogun',
+    role: 'Head of IT',
+    company: 'Logistics & Supply Chain Company',
+    content: 'We were running services on a messy cloud setup and spending more than we should. Odysia helped us restructure our cloud environment, improve security, and reduce unnecessary costs. The documentation they left behind made it easy for our internal team to manage things afterward.',
     rating: 5,
-    avatar: 'M'
+    avatar: 'T',
+    avatarUrl: '/images/testimonials/tunde-balogun.png'
   },
   {
     id: '5',
-    name: 'Alex Thompson',
-    role: 'UI/UX Designer',
-    company: 'DesignHub',
-    content: 'The quality of clients and projects on Odysia is outstanding. Payment protection and professional support make it my go-to platform.',
+    name: 'Sarah Williams',
+    role: 'Product Manager',
+    company: 'Early-Stage SaaS Company',
+    content: 'Odysia didn’t just design screens. They challenged assumptions, tested ideas quickly, and iterated based on feedback. The final product felt intentional and user-focused. It was obvious they cared about outcomes, not just deliverables.',
     rating: 5,
-    avatar: 'A'
+    avatar: 'S',
+    avatarUrl: '/images/testimonials/sarah-williams.png'
   }
 ]
 
@@ -67,7 +73,7 @@ export default function Testimonials() {
   const { ref, controls } = useScrollAnimation()
   const { currentIndex, direction, isAutoPlaying, next, previous, goTo, pause, resume } = useCarousel(testimonials.length, 5000)
   const isMobile = useIsMobile()
-  
+
   // Keyboard navigation
   useKeyboardNavigation(testimonials.length, (direction) => {
     if (direction === 'next') next()
@@ -103,7 +109,7 @@ export default function Testimonials() {
   return (
     <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white dark:bg-dark-bg" ref={ref}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
           className="text-center mb-12 sm:mb-16"
           variants={fadeInUp}
           initial="hidden"
@@ -113,13 +119,13 @@ export default function Testimonials() {
             What Our Clients Say
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-dark-text-secondary max-w-3xl mx-auto px-4 sm:px-0 leading-relaxed">
-            Real feedback from clients and experts who trust Odysia for their tech projects
+            Real feedback from event professionals who trust Odysia
           </p>
         </motion.div>
 
         <div className="relative">
           {/* Testimonial Carousel */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden min-h-[500px] sm:min-h-[400px]">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={currentIndex}
@@ -142,10 +148,18 @@ export default function Testimonials() {
                   <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 dark:border-dark-border">
                     {/* Avatar and Info */}
                     <div className="flex items-center mb-4 sm:mb-6">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mr-4">
-                        <span className="text-lg sm:text-xl font-bold text-primary-600 dark:text-primary-400">
-                          {testimonials[currentIndex].avatar}
-                        </span>
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden mr-4 relative flex-shrink-0 bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+                        {testimonials[currentIndex].avatarUrl ? (
+                          <img
+                            src={testimonials[currentIndex].avatarUrl}
+                            alt={testimonials[currentIndex].name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg sm:text-xl font-bold text-primary-600 dark:text-primary-400">
+                            {testimonials[currentIndex].avatar}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-dark-text">
@@ -156,13 +170,13 @@ export default function Testimonials() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 }}
                     >
-                      <motion.p 
+                      <motion.p
                         className="text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4 sm:mb-6 italic"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -170,9 +184,9 @@ export default function Testimonials() {
                       >
                         &ldquo;{testimonials[currentIndex].content}&rdquo;
                       </motion.p>
-                      
+
                       {/* Rating Stars */}
-                      <motion.div 
+                      <motion.div
                         className="flex items-center"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -214,7 +228,7 @@ export default function Testimonials() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </motion.button>
-          
+
           <motion.button
             className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white dark:bg-dark-card rounded-full shadow-lg flex items-center justify-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900 transition-colors z-10 mobile-touch-target"
             onClick={next}
@@ -228,7 +242,7 @@ export default function Testimonials() {
           </motion.button>
 
           {/* Dots Indicator */}
-          <motion.div 
+          <motion.div
             className="flex justify-center mt-6 sm:mt-8 space-x-2"
             variants={staggerItem}
             role="tablist"
@@ -237,9 +251,8 @@ export default function Testimonials() {
             {testimonials.map((_, index) => (
               <motion.button
                 key={index}
-                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-colors mobile-touch-target ${
-                  index === currentIndex ? 'bg-primary-600 dark:bg-primary-400' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
+                className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-colors mobile-touch-target ${index === currentIndex ? 'bg-primary-600 dark:bg-primary-400' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
                 onClick={() => goTo(index)}
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.8 }}
@@ -257,4 +270,5 @@ export default function Testimonials() {
       </div>
     </section>
   )
-} 
+}
+
