@@ -2,8 +2,10 @@ export interface ContactFormData {
   name: string
   email: string
   company?: string
+  projectType: string
+  budget?: string
+  timeline?: string
   message: string
-  service?: string
 }
 
 export interface Service {
@@ -22,19 +24,22 @@ export interface Testimonial {
   rating: number
 }
 
+// Basic configuration for API URL - ideally this comes from env vars
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export async function submitContactForm(data: ContactFormData): Promise<void> {
-  // In a real application, this would send data to your backend API
-  // For now, we'll simulate an API call
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Simulate API call
-      if (Math.random() > 0.1) { // 90% success rate
-        resolve()
-      } else {
-        reject(new Error('Failed to submit form'))
-      }
-    }, 1000)
-  })
+  const response = await fetch(`${API_URL}/api/contact`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to submit form');
+  }
 }
 
 export async function fetchServices(): Promise<Service[]> {

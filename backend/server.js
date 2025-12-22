@@ -1,7 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+console.log('Environment loaded from:', path.resolve(__dirname, '.env'));
+console.log('EMAIL_USER loaded:', !!process.env.EMAIL_USER);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,6 +26,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');
