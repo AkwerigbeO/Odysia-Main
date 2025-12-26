@@ -2,10 +2,10 @@
 
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { 
-  FolderIcon, 
-  CurrencyDollarIcon, 
-  ClockIcon, 
+import {
+  FolderIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -13,11 +13,13 @@ import {
 } from '@heroicons/react/24/outline'
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export default function DashboardHome() {
   const router = useRouter()
   const { formatAmount } = useCurrency()
-  
+  const { user } = useAuth()
+
   const handleNavigation = (path: string) => {
     router.push(path)
   }
@@ -85,7 +87,7 @@ export default function DashboardHome() {
       {/* Welcome Section */}
       <motion.div variants={staggerItem} className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Welcome back, John! 👋
+          Welcome back, {user?.name || 'Guest'}! 👋
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Here&apos;s what&apos;s happening with your projects today.
@@ -93,7 +95,7 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* Stats Cards */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
       >
@@ -128,7 +130,7 @@ export default function DashboardHome() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Notifications */}
-        <motion.div 
+        <motion.div
           variants={staggerItem}
           className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6"
         >
@@ -140,27 +142,24 @@ export default function DashboardHome() {
               View all
             </button>
           </div>
-          
+
           <div className="space-y-4">
             {notifications.map((notification) => (
               <motion.div
                 key={notification.id}
                 whileHover={{ x: 5 }}
-                className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${
-                  notification.urgent 
-                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' 
+                className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${notification.urgent
+                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                     : 'bg-gray-50 dark:bg-dark-surface'
-                }`}
+                  }`}
               >
-                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                  notification.urgent ? 'bg-red-500' : 'bg-green-500'
-                }`} />
+                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${notification.urgent ? 'bg-red-500' : 'bg-green-500'
+                  }`} />
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${
-                    notification.urgent 
-                      ? 'text-red-900 dark:text-red-100' 
+                  <p className={`text-sm font-medium ${notification.urgent
+                      ? 'text-red-900 dark:text-red-100'
                       : 'text-gray-900 dark:text-white'
-                  }`}>
+                    }`}>
                     {notification.message}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -176,7 +175,7 @@ export default function DashboardHome() {
         </motion.div>
 
         {/* Earnings Summary */}
-        <motion.div 
+        <motion.div
           variants={staggerItem}
           className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6"
         >
@@ -189,7 +188,7 @@ export default function DashboardHome() {
               <span className="text-sm font-medium">+15%</span>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             {recentEarnings.map((earning, index) => (
               <motion.div
@@ -222,7 +221,7 @@ export default function DashboardHome() {
               </motion.div>
             ))}
           </div>
-          
+
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -237,14 +236,14 @@ export default function DashboardHome() {
       </div>
 
       {/* Quick Actions */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6"
       >
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Quick Actions
         </h2>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <motion.button
             onClick={() => handleNavigation('/dashboard/projects')}
@@ -259,7 +258,7 @@ export default function DashboardHome() {
               View Projects
             </span>
           </motion.button>
-          
+
           <motion.button
             onClick={() => handleNavigation('/dashboard/earnings')}
             whileHover={{ scale: 1.05 }}
@@ -273,7 +272,7 @@ export default function DashboardHome() {
               Request Payment
             </span>
           </motion.button>
-          
+
           <motion.button
             onClick={() => handleNavigation('/dashboard/milestones')}
             whileHover={{ scale: 1.05 }}
@@ -287,7 +286,7 @@ export default function DashboardHome() {
               Submit Work
             </span>
           </motion.button>
-          
+
           <motion.button
             onClick={() => handleNavigation('/dashboard/profile')}
             whileHover={{ scale: 1.05 }}

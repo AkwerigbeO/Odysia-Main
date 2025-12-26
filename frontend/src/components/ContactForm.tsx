@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { submitContactForm } from '@/lib/api'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import { toast } from 'react-hot-toast'
 
 export default function ContactForm() {
   const { formatAmount } = useCurrency()
@@ -31,9 +32,11 @@ export default function ContactForm() {
     try {
       await submitContactForm(formData)
       setSubmitStatus('success')
+      toast.success('Message sent successfully!')
       setFormData({ name: '', email: '', company: '', projectType: '', budget: '', timeline: '', message: '' })
     } catch (error) {
       setSubmitStatus('error')
+      toast.error('Failed to send message. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -51,7 +54,7 @@ export default function ContactForm() {
           </div>
         </div>
       )}
-      
+
       {submitStatus === 'error' && (
         <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <div className="flex items-center">
@@ -80,7 +83,7 @@ export default function ContactForm() {
               placeholder="Your full name"
             />
           </div>
-          
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
               Email *
@@ -113,7 +116,7 @@ export default function ContactForm() {
               placeholder="Your company name"
             />
           </div>
-          
+
           <div>
             <label htmlFor="projectType" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
               Project Type *
@@ -149,13 +152,13 @@ export default function ContactForm() {
               className="w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white dark:bg-dark-surface text-gray-900 dark:text-dark-text"
             >
               <option value="">Select budget range</option>
-                              <option value="under-5k">Under {formatAmount(5000000)}</option>
-                <option value="5k-15k">{formatAmount(5000000)} - {formatAmount(15000000)}</option>
-                <option value="15k-50k">{formatAmount(15000000)} - {formatAmount(50000000)}</option>
-                <option value="50k-plus">{formatAmount(50000000)}+</option>
+              <option value="under-5k">Under {formatAmount(5000000)}</option>
+              <option value="5k-15k">{formatAmount(5000000)} - {formatAmount(15000000)}</option>
+              <option value="15k-50k">{formatAmount(15000000)} - {formatAmount(50000000)}</option>
+              <option value="50k-plus">{formatAmount(50000000)}+</option>
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">
               Timeline

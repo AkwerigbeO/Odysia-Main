@@ -5,6 +5,8 @@ import AnimatedCursor from '@/components/AnimatedCursor'
 import ScrollProgress from '@/components/ScrollProgress'
 import { ThemeProvider } from '@/lib/contexts/ThemeContext'
 import { CurrencyProvider } from '@/lib/contexts/CurrencyContext'
+import { AuthProvider } from '@/lib/contexts/AuthContext'
+import { Toaster } from 'react-hot-toast'
 
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import LayoutWrapper from '@/components/LayoutWrapper'
@@ -83,18 +85,21 @@ export default function RootLayout({
       <body className={`${inter.className} transition-colors duration-300 bg-white dark:bg-black text-gray-900 dark:text-white antialiased`}>
         <ThemeProvider>
           <CurrencyProvider>
-            <ErrorBoundary>
-              <div className="min-h-screen flex flex-col">
-                <ScrollProgress />
-                <AnimatedCursor />
-                <LayoutWrapper>
-                  <NavigationWrapper>
-                    {children}
-                  </NavigationWrapper>
-                </LayoutWrapper>
-                <MobileTestingUtils />
-              </div>
-            </ErrorBoundary>
+            <AuthProvider>
+              <ErrorBoundary>
+                <div className="min-h-screen flex flex-col">
+                  <ScrollProgress />
+                  <AnimatedCursor />
+                  <LayoutWrapper>
+                    <NavigationWrapper>
+                      {children}
+                    </NavigationWrapper>
+                  </LayoutWrapper>
+                  <MobileTestingUtils />
+                  <Toaster position="top-right" />
+                </div>
+              </ErrorBoundary>
+            </AuthProvider>
           </CurrencyProvider>
         </ThemeProvider>
       </body>

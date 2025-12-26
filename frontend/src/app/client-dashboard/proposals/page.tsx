@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   UserIcon,
   StarIcon,
   CurrencyDollarIcon,
@@ -25,73 +25,13 @@ export default function ClientProposalsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const { formatAmount } = useCurrency()
 
-  const proposals = [
-    {
-      id: 1,
-      project: "E-commerce Website Redesign",
-      expert: {
-        name: "Sarah Johnson",
-        avatar: "SJ",
-        rating: 4.9,
-        reviews: 127,
-        completedProjects: 89,
-        skills: ["React", "Node.js", "UI/UX"],
-        bio: "Full-stack developer with 8+ years experience in e-commerce and web applications.",
-        location: "San Francisco, CA"
-      },
-      budget: formatAmount(8500000),
-      timeline: "4 weeks",
-      submittedDate: "Dec 5, 2024",
-      status: "pending",
-      description: "I'll create a modern, responsive e-commerce website with advanced features including payment integration, inventory management, and admin dashboard.",
-      portfolio: "https://sarahjohnson.dev"
-    },
-    {
-      id: 2,
-      project: "Mobile App Development",
-      expert: {
-        name: "Michael Brown",
-        avatar: "MB",
-        rating: 4.7,
-        reviews: 94,
-        completedProjects: 67,
-        skills: ["React Native", "Firebase", "API Integration"],
-        bio: "Mobile app specialist with expertise in cross-platform development.",
-        location: "Austin, TX"
-      },
-      budget: formatAmount(12000000),
-      timeline: "6 weeks",
-      submittedDate: "Dec 4, 2024",
-      status: "accepted",
-      description: "Full-stack mobile app development with real-time features, push notifications, and cross-platform compatibility.",
-      portfolio: "https://michaelbrown.dev"
-    },
-    {
-      id: 3,
-      project: "API Integration",
-      expert: {
-        name: "Alex Chen",
-        avatar: "AC",
-        rating: 4.8,
-        reviews: 156,
-        completedProjects: 112,
-        skills: ["Python", "Django", "AWS"],
-        bio: "Backend developer specializing in scalable APIs and cloud infrastructure.",
-        location: "Seattle, WA"
-      },
-      budget: formatAmount(6200000),
-      timeline: "3 weeks",
-      submittedDate: "Dec 3, 2024",
-      status: "rejected",
-      description: "Comprehensive API development with documentation, testing, and deployment to cloud infrastructure.",
-      portfolio: "https://alexchen.dev"
-    }
-  ]
+  // Real empty state - no backend for proposals yet
+  const proposals: any[] = []
 
   const filteredProposals = proposals.filter(proposal => {
     const matchesFilter = filter === 'all' || proposal.status === filter
     const matchesSearch = proposal.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         proposal.expert.name.toLowerCase().includes(searchTerm.toLowerCase())
+      proposal.expert.name.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -171,7 +111,7 @@ export default function ClientProposalsPage() {
                 }}
               />
             </div>
-            
+
             {/* Filter */}
             <select
               value={filter}
@@ -196,11 +136,10 @@ export default function ClientProposalsPage() {
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'grid'
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'grid'
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
+                  }`}
                 style={{
                   minHeight: '32px',
                   minWidth: '60px',
@@ -212,11 +151,10 @@ export default function ClientProposalsPage() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'list'
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
+                  }`}
                 style={{
                   minHeight: '32px',
                   minWidth: '60px',
@@ -277,7 +215,7 @@ export default function ClientProposalsPage() {
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
                     {proposal.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between text-xs sm:text-sm">
                     <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
                       <CurrencyDollarIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -331,7 +269,7 @@ export default function ClientProposalsPage() {
                     <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span>View</span>
                   </motion.button>
-                  
+
                   {proposal.status === 'pending' && (
                     <>
                       <motion.button
@@ -348,7 +286,7 @@ export default function ClientProposalsPage() {
                       >
                         <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                       </motion.button>
-                      
+
                       <motion.button
                         onClick={() => handleReject(proposal.id)}
                         className="bg-red-600 dark:bg-red-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-700 dark:hover:bg-red-600 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -389,7 +327,7 @@ export default function ClientProposalsPage() {
                       {getStatusText(proposal.status)}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3 mb-2">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -407,11 +345,11 @@ export default function ClientProposalsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
                     {proposal.description}
                   </p>
-                  
+
                   <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
                       <CurrencyDollarIcon className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -427,7 +365,7 @@ export default function ClientProposalsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <motion.button
                     onClick={() => handleViewProfile(proposal.portfolio)}
@@ -443,7 +381,7 @@ export default function ClientProposalsPage() {
                     <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span>View Details</span>
                   </motion.button>
-                  
+
                   {proposal.status === 'pending' && (
                     <>
                       <motion.button
@@ -460,7 +398,7 @@ export default function ClientProposalsPage() {
                         <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span className="hidden sm:inline">Accept</span>
                       </motion.button>
-                      
+
                       <motion.button
                         onClick={() => handleReject(proposal.id)}
                         className="bg-red-600 dark:bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-red-700 dark:hover:bg-red-600 transition-colors flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -493,7 +431,7 @@ export default function ClientProposalsPage() {
           <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No proposals found</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {searchTerm || filter !== 'all' 
+            {searchTerm || filter !== 'all'
               ? 'Try adjusting your search or filter criteria'
               : 'Proposals will appear here when experts submit them'
             }

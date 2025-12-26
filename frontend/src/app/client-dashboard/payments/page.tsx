@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   CurrencyDollarIcon,
   CreditCardIcon,
   BanknotesIcon,
@@ -54,115 +54,20 @@ export default function ClientPaymentsPage() {
   const { formatAmount } = useCurrency()
 
   const escrowBalance = {
-    total: 15400,
-    available: 8900,
-    pending: 6500,
-    released: 24700
+    total: 0,
+    available: 0,
+    pending: 0,
+    released: 0
   }
 
-  const pendingMilestones = [
-    {
-      id: 1,
-      project: "E-commerce Website Redesign",
-      expert: "Alex Chen",
-      amount: 4250,
-      description: "Frontend development completion",
-      dueDate: "Dec 12, 2024",
-      status: "ready"
-    },
-    {
-      id: 2,
-      project: "Mobile App Development",
-      expert: "Maria Rodriguez",
-      amount: 6000,
-      description: "Backend API integration",
-      dueDate: "Dec 15, 2024",
-      status: "in_progress"
-    },
-    {
-      id: 3,
-      project: "Database Optimization",
-      expert: "David Kim",
-      amount: 2400,
-      description: "Performance testing and optimization",
-      dueDate: "Dec 18, 2024",
-      status: "pending"
-    }
-  ]
+  const pendingMilestones: any[] = []
 
-  const paymentHistory = [
-    {
-      id: 1,
-      project: "E-commerce Website Redesign",
-      expert: "Alex Chen",
-      amount: 4250,
-      type: "released",
-      date: "Dec 5, 2024",
-      description: "Design phase completion",
-      invoice: "INV-2024-001",
-      receipt: "RCP-2024-001"
-    },
-    {
-      id: 2,
-      project: "Mobile App Development",
-      expert: "Maria Rodriguez",
-      amount: 6000,
-      type: "released",
-      date: "Nov 28, 2024",
-      description: "Initial development milestone",
-      invoice: "INV-2024-002",
-      receipt: "RCP-2024-002"
-    },
-    {
-      id: 3,
-      project: "Database Optimization",
-      expert: "David Kim",
-      amount: 3200,
-      type: "released",
-      date: "Nov 20, 2024",
-      description: "Project completion",
-      invoice: "INV-2024-003",
-      receipt: "RCP-2024-003"
-    },
-    {
-      id: 4,
-      project: "API Integration",
-      expert: "Sarah Johnson",
-      amount: 3100,
-      type: "deposited",
-      date: "Nov 15, 2024",
-      description: "Project deposit",
-      invoice: "INV-2024-004",
-      receipt: "RCP-2024-004"
-    },
-    {
-      id: 5,
-      project: "UI/UX Design System",
-      expert: "David Kim",
-      amount: 7500,
-      type: "held",
-      date: "Dec 10, 2024",
-      description: "Design system implementation",
-      invoice: "INV-2024-005",
-      receipt: "RCP-2024-005"
-    },
-    {
-      id: 6,
-      project: "Cloud Migration",
-      expert: "Alex Chen",
-      amount: 5200,
-      type: "pending",
-      date: "Dec 8, 2024",
-      description: "Infrastructure setup",
-      invoice: "INV-2024-006",
-      receipt: "RCP-2024-006"
-    }
-  ]
+  const paymentHistory: any[] = []
 
   const filteredPayments = paymentHistory.filter(payment => {
     const matchesFilter = filter === 'all' || payment.type === filter
     const matchesSearch = payment.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.expert.toLowerCase().includes(searchTerm.toLowerCase())
+      payment.expert.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
@@ -242,7 +147,7 @@ export default function ClientPaymentsPage() {
               Manage your escrow balance and payment history
             </p>
           </div>
-          
+
           {/* Search and Filters - Mobile Stack */}
           <div className="space-y-3">
             {/* Search */}
@@ -261,7 +166,7 @@ export default function ClientPaymentsPage() {
                 }}
               />
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               {/* Filter */}
               <select
@@ -280,7 +185,7 @@ export default function ClientPaymentsPage() {
                 <option value="held">Held in Escrow</option>
                 <option value="pending">Pending</option>
               </select>
-              
+
               {/* Date Range */}
               <select
                 value={dateRange}
@@ -380,11 +285,10 @@ export default function ClientPaymentsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
+                  className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
+                    }`}
                   style={{
                     minHeight: '48px',
                     WebkitTapHighlightColor: 'transparent',
@@ -456,7 +360,7 @@ export default function ClientPaymentsPage() {
                       </div>
                       <ArrowUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </button>
-                    
+
                     <button className="w-full flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                       style={{
                         minHeight: '56px',
@@ -470,7 +374,7 @@ export default function ClientPaymentsPage() {
                       </div>
                       <ArrowDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </button>
-                    
+
                     <button className="w-full flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
                       style={{
                         minHeight: '56px',
@@ -524,7 +428,7 @@ export default function ClientPaymentsPage() {
                     </div>
                     <div className="flex-shrink-0">
                       {milestone.status === 'ready' && (
-                        <button 
+                        <button
                           onClick={() => handleReleasePayment(milestone.id)}
                           className="bg-green-600 dark:bg-green-500 text-white px-4 py-3 rounded-xl text-sm font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors flex items-center space-x-2"
                           style={{
@@ -581,7 +485,7 @@ export default function ClientPaymentsPage() {
                           {getTypeText(payment.type)}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-white text-lg">
@@ -589,7 +493,7 @@ export default function ClientPaymentsPage() {
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">{payment.date}</p>
                         </div>
-                        
+
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleViewReceipt(payment.receipt)}
@@ -621,7 +525,7 @@ export default function ClientPaymentsPage() {
                   </motion.div>
                 ))}
               </div>
-              
+
               {filteredPayments.length === 0 && (
                 <motion.div variants={fadeInUp} className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -629,7 +533,7 @@ export default function ClientPaymentsPage() {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No payments found</h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    {searchTerm || filter !== 'all' 
+                    {searchTerm || filter !== 'all'
                       ? 'Try adjusting your search or filter criteria.'
                       : 'No payment history available.'
                     }

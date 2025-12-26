@@ -10,29 +10,46 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const setupSecurity = require('./middleware/securityMiddleware');
+const { errorHandler } = require('./middleware/errorMiddleware');
+
+// Apply Security Middleware
+setupSecurity(app);
+
 app.use(express.json());
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB Connected Successfully');
-  })
-  .catch((err) => {
-    console.error('MongoDB Connection Error:', err);
-    process.exit(1); // Exit process with failure
-  });
+// Database Connection
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log('MongoDB Connected Successfully');
+    })
+    .catch((err) => {
+      console.error('MongoDB Connection Error:', err);
+      process.exit(1); // Exit process with failure
+    });
+}
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
+// Error Handler (must be last middleware)
+app.use(errorHandler);
+
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

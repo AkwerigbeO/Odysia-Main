@@ -1,17 +1,45 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import api from '@/lib/axios'
+
 export default function ClientNotificationsPage() {
-  // Responsive scaffold for client notifications
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const { data } = await api.get('/notifications')
+        setNotifications(data)
+      } catch (error) {
+        console.error('Error fetching notifications:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchNotifications()
+  }, [])
+
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
       <h1 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">All Notifications</h1>
       <div className="space-y-3 sm:space-y-4">
-        {/* Replace with real data when available */}
-        {[1, 2, 3].map((id) => (
+        {loading ? (
+          <p className="text-gray-500">Loading notifications...</p>
+        ) : notifications.length === 0 ? (
+          <p className="text-gray-500">No new notifications</p>
+        ) : notifications.map((notification) => (
           <div
-            key={id}
-            className="p-3 sm:p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+            key={notification._id}
+            className={`p-3 sm:p-4 rounded-lg border ${notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
+              }`}
           >
-            <p className="text-sm sm:text-base text-gray-900 dark:text-white">Sample notification #{id}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">2 hours ago</p>
+            <p className="text-sm sm:text-base text-gray-900 dark:text-black">{notification.message}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {new Date(notification.createdAt).toLocaleString()}
+            </p>
           </div>
         ))}
       </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
-import { 
+import {
   Bars3Icon,
   XMarkIcon,
   ChevronLeftIcon,
@@ -53,7 +53,7 @@ export default function DashboardLayout({
     const checkScreenSize = () => {
       const width = window.innerWidth
       setIsMobile(width < 768) // md breakpoint
-      
+
       if (width >= 1024) { // lg breakpoint
         setIsSidebarOpen(false)
         // Keep existing state on large screens, don't force expand
@@ -67,16 +67,17 @@ export default function DashboardLayout({
         setIsSidebarOpen(false)
       }
     }
-    
+
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
   // Determine active section based on current pathname
-  const currentActiveSection = sidebarItems.find(item => 
+  // Prioritize activeSection prop if provided, otherwise fallback to internal detection
+  const currentActiveSection = activeSection || sidebarItems.find(item =>
     pathname === item.href || pathname.startsWith(item.href + '/')
-  )?.id || activeSection
+  )?.id
 
   const handleSidebarItemClick = (href: string) => {
     if (isMobile) {
@@ -133,12 +134,12 @@ export default function DashboardLayout({
                     <XMarkIcon className="h-6 w-6" />
                   </button>
                 </div>
-                
+
                 <nav className="space-y-2">
                   {sidebarItems.map((item, index) => {
                     const Icon = item.icon
                     const isActive = currentActiveSection === item.id
-                    
+
                     return (
                       <motion.div
                         key={item.id}
@@ -148,15 +149,13 @@ export default function DashboardLayout({
                       >
                         <button
                           onClick={() => handleSidebarItemClick(item.href)}
-                          className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all duration-200 ${
-                            isActive
+                          className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all duration-200 ${isActive
                               ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                          }`}
+                            }`}
                         >
-                          <Icon className={`h-6 w-6 flex-shrink-0 ${
-                            isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
-                          }`} />
+                          <Icon className={`h-6 w-6 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                            }`} />
                           <span className="font-medium text-base">{item.label}</span>
                         </button>
                       </motion.div>
@@ -170,33 +169,33 @@ export default function DashboardLayout({
       </AnimatePresence>
 
       {/* Desktop/Tablet Sidebar */}
-      <motion.aside 
+      <motion.aside
         className="hidden md:flex flex-col bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 transition-width duration-300"
         animate={{ width: isSidebarCollapsed ? '5rem' : '16rem' }}
         initial={false}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            {!isSidebarCollapsed && (
-              <Logo
-                width={120}
-                height={40}
-                className="h-8 w-auto"
-                alt="Odysia Logo"
-              />
-            )}
-            <button
-              onClick={toggleSidebarCollapse}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              {isSidebarCollapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
-            </button>
+          {!isSidebarCollapsed && (
+            <Logo
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              alt="Odysia Logo"
+            />
+          )}
+          <button
+            onClick={toggleSidebarCollapse}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            {isSidebarCollapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
+          </button>
         </div>
-        
+
         <nav className="flex-1 space-y-1 p-2">
           {sidebarItems.map((item) => {
             const Icon = item.icon
             const isActive = currentActiveSection === item.id
-            
+
             return (
               <motion.div
                 key={item.id}
@@ -204,18 +203,15 @@ export default function DashboardLayout({
               >
                 <button
                   onClick={() => handleSidebarItemClick(item.href)}
-                  className={`w-full flex items-center rounded-lg text-left transition-all duration-200 ${
-                    isSidebarCollapsed ? 'p-3 justify-center' : 'px-3 py-2 space-x-3'
-                  } ${
-                    isActive
+                  className={`w-full flex items-center rounded-lg text-left transition-all duration-200 ${isSidebarCollapsed ? 'p-3 justify-center' : 'px-3 py-2 space-x-3'
+                    } ${isActive
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                   title={isSidebarCollapsed ? item.label : undefined}
                 >
-                  <Icon className={`flex-shrink-0 h-6 w-6 ${
-                    isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
-                  }`} />
+                  <Icon className={`flex-shrink-0 h-6 w-6 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                    }`} />
                   {!isSidebarCollapsed && (
                     <span className="font-medium text-sm">{item.label}</span>
                   )}
@@ -229,7 +225,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Top Navbar */}
-        <motion.nav 
+        <motion.nav
           className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-30 border-b border-gray-200 dark:border-gray-700"
           variants={fadeInDown}
           initial="hidden"

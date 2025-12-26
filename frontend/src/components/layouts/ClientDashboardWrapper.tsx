@@ -1,18 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { 
-  HomeIcon, 
-  FolderIcon, 
-  ChatBubbleLeftRightIcon, 
-  CurrencyDollarIcon, 
-  UserIcon, 
+import { useRouter, usePathname } from 'next/navigation'
+import {
+  HomeIcon,
+  FolderIcon,
+  ChatBubbleLeftRightIcon,
+  CurrencyDollarIcon,
+  UserIcon,
   QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline'
 import DashboardLayout from './DashboardLayout'
 import Navbar from './Navbar'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 interface ClientDashboardWrapperProps {
   children: React.ReactNode
@@ -29,55 +30,35 @@ const sidebarItems = [
   { id: 'support', label: 'Support', icon: QuestionMarkCircleIcon, href: '/client-dashboard/support' }
 ]
 
-export default function ClientDashboardWrapper({ children, activeSection = 'dashboard' }: ClientDashboardWrapperProps) {
+export default function ClientDashboardWrapper({ children }: ClientDashboardWrapperProps) {
+  const { user, logout } = useAuth()
   const { formatAmount } = useCurrency()
-  const [notifications, setNotifications] = useState(3)
-  const [messages, setMessages] = useState(2)
+  const [notifications, setNotifications] = useState(0)
+  const [messages, setMessages] = useState(0)
   const router = useRouter()
+  const pathname = usePathname()
 
-  // Sample notifications data for clients
-  const recentNotifications = [
-    {
-      id: 1,
-      type: 'proposal',
-      message: 'New proposal received for "E-commerce Website" project',
-      time: '2 hours ago',
-      urgent: true,
-      read: false
-    },
-    {
-      id: 2,
-      type: 'payment',
-      message: `Payment of ${formatAmount(250000)} has been processed for Mobile App project`,
-      time: '1 day ago',
-      urgent: false,
-      read: false
-    },
-    {
-      id: 3,
-      type: 'milestone',
-      message: 'Project milestone "UI Design" has been completed',
-      time: '2 days ago',
-      urgent: false,
-      read: true
-    },
-    {
-      id: 4,
-      type: 'message',
-      message: 'New message from Alex Chen regarding project updates',
-      time: '3 days ago',
-      urgent: false,
-      read: true
-    }
-  ]
+  // Determine active section from pathname
+  const activeSection = sidebarItems.find(item => {
+    // Exact match for dashboard root
+    if (item.id === 'dashboard' && pathname === '/client-dashboard') return true
+    // Starts with for other sections (e.g. /client-dashboard/projects/123)
+    if (item.id !== 'dashboard' && pathname?.startsWith(item.href)) return true
+    return false
+  })?.id || 'dashboard'
+
+  // Empty for now until we move notification logic to context or layout fetch
+  const recentNotifications: any[] = []
 
   const userProfile = {
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com'
+    name: user?.name || 'Client',
+    email: user?.email || '',
+    avatar: '' // Add avatar if available in user object later
   }
 
   const handleLogout = () => {
-    router.push('/')
+    logout()
+    // router.push('/') // logout already handles redirect
   }
 
   const handleNotificationClick = (notificationId: number) => {

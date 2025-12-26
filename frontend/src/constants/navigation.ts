@@ -8,6 +8,10 @@ export const NAVIGATION_LINKS = [
     href: '/services',
   },
   {
+    label: 'Events',
+    href: '/events',
+  },
+  {
     label: 'About',
     href: '/about',
   },

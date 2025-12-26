@@ -1,87 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const {
+    registerUser,
+    loginUser,
+    getMe,
+    forgotPassword,
+    resetPassword,
+} = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const {
+    validateRequest,
+    registerSchema,
+    loginSchema,
+} = require('../middleware/validationMiddleware');
 
-// Generate JWT
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', {
-        expiresIn: '30d',
-    });
-};
-
-// @route   POST /api/auth/register
-// @desc    Register new user
-// @access  Public
-router.post('/register', async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        if (!name || !email || !password) {
-            return res.status(400).json({ message: 'Please add all fields' });
-        }
-
-        // Check if user exists
-        const userExists = await User.findOne({ email });
-
-        if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        // Create user
-        const user = await User.create({
-            name,
-            email,
-            password,
-        });
-
-        if (user) {
-            res.status(201).json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        } else {
-            res.status(400).json({ message: 'Invalid user data' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// @route   POST /api/auth/login
-// @desc    Authenticate a user
-// @access  Public
-router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Check for user email
-        const user = await User.findOne({ email });
-
-        if (user && (await user.matchPassword(password))) {
-            res.json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        } else {
-            res.status(401).json({ message: 'Invalid credentials' });
-        }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// @route   GET /api/auth/me
-// @desc    Get user data
-// @access  Private
-router.get('/me', protect, async (req, res) => {
-    res.status(200).json(req.user);
-});
+router.post('/register', validateRequest(registerSchema), registerUser);
+router.post('/login', validateRequest(loginSchema), loginUser);
+router.get('/me', protect, getMe);
+router.post('/forgotpassword', forgotPassword);
+router.put('/resetpassword/:resettoken', resetPassword);
 
 module.exports = router;

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   FolderIcon,
   ClockIcon,
   CheckCircleIcon,
@@ -21,6 +21,8 @@ import {
   ArrowRightIcon
 } from '@heroicons/react/24/outline'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import api from '@/lib/axios'
 
 // Mobile-optimized animations
 const simpleFadeIn = {
@@ -49,15 +51,47 @@ const staggerItem = {
 }
 
 export default function ClientDashboardPage() {
-  const [clientName] = useState("Sarah Johnson")
-  const [lastLogin] = useState("2 hours ago")
+  const { user } = useAuth()
   const { formatAmount } = useCurrency()
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    inProgress: 0,
+    completed: 0,
+    totalSpent: 0,
+    rating: 0,
+    activeChats: 0,
+    pendingActions: 0
+  })
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch Dashboard Data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsRes, activityRes] = await Promise.all([
+          api.get('/projects/stats'),
+          api.get('/notifications/activity')
+        ])
+        setStats(statsRes.data)
+        setActivities(activityRes.data)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchDashboardData()
+    }
+  }, [user])
 
   const summaryStats = [
     {
       title: "Total Projects",
-      value: 12,
-      change: "+2",
+      value: stats.totalProjects,
+      change: "All time",
       changeType: "positive",
       icon: FolderIcon,
       color: "bg-blue-500",
@@ -65,8 +99,8 @@ export default function ClientDashboardPage() {
     },
     {
       title: "In Progress",
-      value: 4,
-      change: "+1",
+      value: stats.inProgress,
+      change: "Active",
       changeType: "positive",
       icon: ClockIcon,
       color: "bg-yellow-500",
@@ -74,8 +108,8 @@ export default function ClientDashboardPage() {
     },
     {
       title: "Completed",
-      value: 8,
-      change: "+3",
+      value: stats.completed,
+      change: "Finished",
       changeType: "positive",
       icon: CheckCircleIcon,
       color: "bg-green-500",
@@ -83,60 +117,12 @@ export default function ClientDashboardPage() {
     },
     {
       title: "Total Spent",
-      value: formatAmount(24500000),
-      change: `+${formatAmount(3200000)}`,
+      value: formatAmount(stats.totalSpent),
+      change: "Invested",
       changeType: "positive",
       icon: CurrencyDollarIcon,
       color: "bg-purple-500",
-      description: "This month"
-    }
-  ]
-
-  const recentActivity = [
-    {
-      id: 1,
-      type: "project_created",
-      title: "New project created",
-      description: "E-commerce Website Redesign",
-      timestamp: "2 hours ago",
-      icon: FolderIcon,
-      color: "bg-blue-500"
-    },
-    {
-      id: 2,
-      type: "proposal_received",
-      title: "Proposal received",
-      description: "Alex Chen submitted a proposal for Mobile App Development",
-      timestamp: "4 hours ago",
-      icon: DocumentTextIcon,
-      color: "bg-green-500"
-    },
-    {
-      id: 3,
-      type: "payment_released",
-      title: "Payment released",
-      description: `${formatAmount(2500000)} released to Maria Rodriguez for UI/UX Design System`,
-      timestamp: "1 day ago",
-      icon: CreditCardIcon,
-      color: "bg-purple-500"
-    },
-    {
-      id: 4,
-      type: "project_completed",
-      title: "Project completed",
-      description: "Database Optimization marked as completed",
-      timestamp: "2 days ago",
-      icon: CheckCircleIcon,
-      color: "bg-green-500"
-    },
-    {
-      id: 5,
-      type: "message_received",
-      title: "New message",
-      description: "David Kim sent a message about API Integration",
-      timestamp: "3 days ago",
-      icon: ChatBubbleLeftRightIcon,
-      color: "bg-blue-500"
+      description: "Total spend"
     }
   ]
 
@@ -194,22 +180,22 @@ export default function ClientDashboardPage() {
       className="space-y-6"
     >
       {/* Welcome Banner - Mobile Optimized */}
-      <motion.div 
+      <motion.div
         variants={simpleFadeIn}
         className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl shadow-sm p-6 text-white"
       >
         <div className="flex flex-col space-y-3">
           <h1 className="text-2xl font-bold">
-            Welcome back, {clientName}! 👋
+            Welcome back, {user?.name || 'Client'}! 👋
           </h1>
           <p className="text-blue-100 dark:text-blue-200 text-base">
-            Last login: {lastLogin} • Ready to build something amazing?
+            Ready to build something amazing?
           </p>
         </div>
       </motion.div>
 
       {/* Summary Cards - Mobile Grid */}
-      <motion.div 
+      <motion.div
         variants={simpleFadeIn}
         className="grid grid-cols-2 gap-4"
       >
@@ -231,16 +217,15 @@ export default function ClientDashboardPage() {
                   ) : (
                     <ArrowDownIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
                   )}
-                  <span className={`text-sm font-medium ${
-                    stat.changeType === 'positive' 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : 'text-red-600 dark:text-red-400'
-                  }`}>
+                  <span className={`text-sm font-medium ${stat.changeType === 'positive'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                    }`}>
                     {stat.change}
                   </span>
                 </div>
               </div>
-              
+
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
                 {stat.value}
               </h3>
@@ -256,7 +241,7 @@ export default function ClientDashboardPage() {
       </motion.div>
 
       {/* Quick Actions - Mobile Optimized */}
-      <motion.div 
+      <motion.div
         variants={simpleFadeIn}
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700"
       >
@@ -267,7 +252,7 @@ export default function ClientDashboardPage() {
             <span>Today</span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {quickActions.map((action, index) => {
             const Icon = action.icon
@@ -302,13 +287,13 @@ export default function ClientDashboardPage() {
       </motion.div>
 
       {/* Recent Activity - Mobile Optimized */}
-      <motion.div 
+      <motion.div
         variants={simpleFadeIn}
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
-          <button 
+          <button
             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
             style={{
               minHeight: '44px',
@@ -319,9 +304,11 @@ export default function ClientDashboardPage() {
             View All
           </button>
         </div>
-        
+
         <div className="space-y-4">
-          {recentActivity.slice(0, 4).map((activity, index) => (
+          {activities.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No recent activity</p>
+          ) : activities.slice(0, 5).map((activity, index) => (
             <motion.div
               key={activity.id}
               variants={staggerItem}
@@ -343,7 +330,7 @@ export default function ClientDashboardPage() {
                   {activity.description}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500">
-                  {activity.timestamp}
+                  {new Date(activity.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </motion.div>
@@ -352,7 +339,7 @@ export default function ClientDashboardPage() {
       </motion.div>
 
       {/* Additional Stats - Mobile Grid */}
-      <motion.div 
+      <motion.div
         variants={simpleFadeIn}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
       >
@@ -367,14 +354,13 @@ export default function ClientDashboardPage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">4.8</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.rating}</span>
             <div className="flex items-center space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <StarIcon
                   key={star}
-                  className={`h-4 w-4 ${
-                    star <= 4 ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
-                  }`}
+                  className={`h-4 w-4 ${star <= Math.round(stats.rating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
+                    }`}
                 />
               ))}
             </div>
@@ -392,7 +378,7 @@ export default function ClientDashboardPage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">5</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.activeChats}</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">conversations</span>
           </div>
         </div>
@@ -408,7 +394,7 @@ export default function ClientDashboardPage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">3</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.pendingActions}</span>
             <span className="text-sm text-gray-600 dark:text-gray-400">items</span>
           </div>
         </div>

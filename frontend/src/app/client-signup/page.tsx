@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { 
-  EyeIcon, 
+import {
+  EyeIcon,
   EyeSlashIcon,
   XMarkIcon,
   UserIcon,
@@ -20,6 +20,8 @@ import {
 } from '@heroicons/react/24/outline'
 import Logo from '@/components/Logo'
 import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { toast } from 'react-hot-toast'
 
 // Countries list (alphabetically ordered)
 const COUNTRIES = [
@@ -64,6 +66,7 @@ interface FormData {
 
 export default function ClientSignUp() {
   const router = useRouter()
+  const { register } = useAuth()
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -75,7 +78,7 @@ export default function ClientSignUp() {
     country: '',
     communicationMethod: 'email'
   })
-  
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
@@ -90,17 +93,17 @@ export default function ClientSignUp() {
     const hasLowerCase = /[a-z]/.test(password)
     const hasNumbers = /\d/.test(password)
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    
+
     return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar
   }
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate form
     const newErrors: Partial<FormData> = {}
-    
+
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address'
@@ -115,9 +118,9 @@ export default function ClientSignUp() {
     if (!formData.clientType) newErrors.clientType = 'Please select your client type'
     if (!formData.country) newErrors.country = 'Please select your country'
     if (!formData.communicationMethod) newErrors.communicationMethod = 'Please select preferred communication method'
-    
+
     setErrors(newErrors)
-    
+
     if (Object.keys(newErrors).length === 0) {
       setShowTermsModal(true)
     }
@@ -126,20 +129,31 @@ export default function ClientSignUp() {
   // Handle terms agreement and signup
   const handleAgreeAndSignup = async () => {
     if (!hasAgreed) return
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      // TODO: Implement actual signup API call
-      console.log('Form data to submit:', formData)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Redirect to client login with success message
-      router.push('/client-login?message=signup-success')
-    } catch (error) {
+      const success = await register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        phone: formData.phone,
+        clientType: formData.clientType,
+        companyName: formData.companyName,
+        country: formData.country,
+        communicationMethod: formData.communicationMethod
+      })
+
+      if (success) {
+        // Redirect will happen, toast shown on login page
+        router.push('/client-login?message=signup-success')
+      } else {
+        toast.error('Registration failed. Please try again.')
+      }
+    } catch (error: any) {
       console.error('Signup error:', error)
+      toast.error(error.message || 'An error occurred during registration')
     } finally {
       setIsSubmitting(false)
       setShowTermsModal(false)
@@ -187,9 +201,8 @@ export default function ClientSignUp() {
                       type="text"
                       value={formData.fullName}
                       onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.fullName ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.fullName ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -209,9 +222,8 @@ export default function ClientSignUp() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.email ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -231,9 +243,8 @@ export default function ClientSignUp() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -253,9 +264,8 @@ export default function ClientSignUp() {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.password ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.password ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Create a strong password"
                     />
                     <button
@@ -286,9 +296,8 @@ export default function ClientSignUp() {
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.confirmPassword ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Confirm your password"
                     />
                     <button
@@ -318,9 +327,8 @@ export default function ClientSignUp() {
                     <select
                       value={formData.clientType}
                       onChange={(e) => setFormData(prev => ({ ...prev, clientType: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.clientType ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.clientType ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                     >
                       <option value="">Select client type</option>
                       {CLIENT_TYPES.map(type => (
@@ -362,9 +370,8 @@ export default function ClientSignUp() {
                     <select
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.country ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.country ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                     >
                       <option value="">Select your country</option>
                       {COUNTRIES.map(country => (
@@ -440,53 +447,53 @@ export default function ClientSignUp() {
               xmlns="http://www.w3.org/2000/svg"
             >
               {/* Background Circle */}
-              <circle cx="200" cy="200" r="180" fill="url(#gradient1)" opacity="0.1"/>
-              
+              <circle cx="200" cy="200" r="180" fill="url(#gradient1)" opacity="0.1" />
+
               {/* Main Building/Office */}
-              <rect x="120" y="140" width="160" height="120" rx="8" fill="url(#gradient2)" stroke="#3B82F6" strokeWidth="2"/>
-              <rect x="140" y="160" width="30" height="30" fill="#E5E7EB"/>
-              <rect x="180" y="160" width="30" height="30" fill="#E5E7EB"/>
-              <rect x="220" y="160" width="30" height="30" fill="#E5E7EB"/>
-              <rect x="140" y="200" width="30" height="30" fill="#E5E7EB"/>
-              <rect x="180" y="200" width="30" height="30" fill="#E5E7EB"/>
-              <rect x="220" y="200" width="30" height="30" fill="#E5E7EB"/>
-              
+              <rect x="120" y="140" width="160" height="120" rx="8" fill="url(#gradient2)" stroke="#3B82F6" strokeWidth="2" />
+              <rect x="140" y="160" width="30" height="30" fill="#E5E7EB" />
+              <rect x="180" y="160" width="30" height="30" fill="#E5E7EB" />
+              <rect x="220" y="160" width="30" height="30" fill="#E5E7EB" />
+              <rect x="140" y="200" width="30" height="30" fill="#E5E7EB" />
+              <rect x="180" y="200" width="30" height="30" fill="#E5E7EB" />
+              <rect x="220" y="200" width="30" height="30" fill="#E5E7EB" />
+
               {/* Roof */}
-              <path d="M110 140 L200 100 L290 140" stroke="#3B82F6" strokeWidth="3" fill="none"/>
-              
+              <path d="M110 140 L200 100 L290 140" stroke="#3B82F6" strokeWidth="3" fill="none" />
+
               {/* Door */}
-              <rect x="185" y="220" width="30" height="40" fill="#3B82F6"/>
-              
+              <rect x="185" y="220" width="30" height="40" fill="#3B82F6" />
+
               {/* Security Shield */}
-              <circle cx="320" cy="120" r="40" fill="url(#gradient3)" stroke="#10B981" strokeWidth="3"/>
-              <path d="M305 120 L315 130 L335 110" stroke="#10B981" strokeWidth="3" fill="none"/>
-              
+              <circle cx="320" cy="120" r="40" fill="url(#gradient3)" stroke="#10B981" strokeWidth="3" />
+              <path d="M305 120 L315 130 L335 110" stroke="#10B981" strokeWidth="3" fill="none" />
+
               {/* Connection Lines */}
-              <path d="M280 160 Q300 140 320 120" stroke="#6B7280" strokeWidth="2" strokeDasharray="5,5"/>
-              <path d="M280 200 Q300 180 320 120" stroke="#6B7280" strokeWidth="2" strokeDasharray="5,5"/>
-              
+              <path d="M280 160 Q300 140 320 120" stroke="#6B7280" strokeWidth="2" strokeDasharray="5,5" />
+              <path d="M280 200 Q300 180 320 120" stroke="#6B7280" strokeWidth="2" strokeDasharray="5,5" />
+
               {/* Floating Elements */}
-              <circle cx="80" cy="100" r="8" fill="#F59E0B"/>
-              <circle cx="320" cy="80" r="6" fill="#EF4444"/>
-              <circle cx="90" cy="300" r="10" fill="#8B5CF6"/>
-              
+              <circle cx="80" cy="100" r="8" fill="#F59E0B" />
+              <circle cx="320" cy="80" r="6" fill="#EF4444" />
+              <circle cx="90" cy="300" r="10" fill="#8B5CF6" />
+
               {/* Gradients */}
               <defs>
                 <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#3B82F6"/>
-                  <stop offset="100%" stopColor="#8B5CF6"/>
+                  <stop offset="0%" stopColor="#3B82F6" />
+                  <stop offset="100%" stopColor="#8B5CF6" />
                 </linearGradient>
                 <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#F3F4F6"/>
-                  <stop offset="100%" stopColor="#E5E7EB"/>
+                  <stop offset="0%" stopColor="#F3F4F6" />
+                  <stop offset="100%" stopColor="#E5E7EB" />
                 </linearGradient>
                 <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#D1FAE5"/>
-                  <stop offset="100%" stopColor="#A7F3D0"/>
+                  <stop offset="0%" stopColor="#D1FAE5" />
+                  <stop offset="100%" stopColor="#A7F3D0" />
                 </linearGradient>
               </defs>
             </svg>
-            
+
             <div className="text-center mt-8">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Secure Collaboration Platform
@@ -542,7 +549,7 @@ export default function ClientSignUp() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">2. Client Responsibilities</h3>
                     <p>
-                      As a client on our platform, you agree to provide accurate project requirements, 
+                      As a client on our platform, you agree to provide accurate project requirements,
                       maintain professional communication, and pay for services as agreed upon.
                     </p>
                   </div>
@@ -550,7 +557,7 @@ export default function ClientSignUp() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">3. Payment Terms</h3>
                     <p>
-                      Payments will be processed through our secure escrow system. Funds are held until 
+                      Payments will be processed through our secure escrow system. Funds are held until
                       project completion and your approval. Platform fees apply as outlined in our fee structure.
                     </p>
                   </div>
@@ -558,7 +565,7 @@ export default function ClientSignUp() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">4. Project Management</h3>
                     <p>
-                      You are responsible for providing clear project requirements and timely feedback. 
+                      You are responsible for providing clear project requirements and timely feedback.
                       Communication through our platform ensures project transparency and security.
                     </p>
                   </div>
@@ -566,7 +573,7 @@ export default function ClientSignUp() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">5. Dispute Resolution</h3>
                     <p>
-                      Any disputes will be resolved through our internal dispute resolution process. 
+                      Any disputes will be resolved through our internal dispute resolution process.
                       We reserve the right to mediate and make final decisions on project-related disputes.
                     </p>
                   </div>
@@ -574,7 +581,7 @@ export default function ClientSignUp() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">6. Privacy Policy</h3>
                     <p>
-                      Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the platform, 
+                      Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the platform,
                       to understand our practices regarding the collection and use of your information.
                     </p>
                   </div>
@@ -598,11 +605,10 @@ export default function ClientSignUp() {
                 <button
                   onClick={handleAgreeAndSignup}
                   disabled={!hasAgreed || isSubmitting}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                    hasAgreed && !isSubmitting
-                      ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                      : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                  }`}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${hasAgreed && !isSubmitting
+                    ? 'bg-primary-600 hover:bg-primary-700 text-white'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    }`}
                 >
                   {isSubmitting ? 'Creating Account...' : 'I Agree & Sign Up'}
                 </button>

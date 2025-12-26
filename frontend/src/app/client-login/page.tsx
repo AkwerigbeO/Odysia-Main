@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
-import { 
+import {
   EyeIcon,
   EyeSlashIcon,
   EnvelopeIcon,
@@ -21,6 +21,8 @@ import {
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/contexts/AuthContext'
+import { toast } from 'react-hot-toast'
 
 function ClientLoginContent() {
   const [email, setEmail] = useState('')
@@ -29,48 +31,50 @@ function ClientLoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
+  const { login } = useAuth()
   const searchParams = useSearchParams()
 
   // Check for success message from signup
   useEffect(() => {
     const message = searchParams.get('message')
     if (message === 'signup-success') {
-      setSuccessMessage('Account created successfully! Please check your email for verification.')
-      // Clear the message after 5 seconds
-      setTimeout(() => setSuccessMessage(''), 5000)
+      // Delay toast slightly to ensure it renders after navigation
+      setTimeout(() => toast.success('Account created successfully! Please check your email for verification.'), 500)
     }
   }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Basic validation
     if (!email || !password) {
-      alert('Please fill in all fields')
+      toast.error('Please fill in all fields')
       return
     }
-    
+
     if (!email.includes('@')) {
-      alert('Please enter a valid email address')
+      toast.error('Please enter a valid email address')
       return
     }
-    
+
     setIsLoading(true)
-    
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false)
-      
-      // Simple validation for demo purposes
-      if (email === 'client@example.com' && password === 'password123') {
+
+    try {
+      const success = await login(email, password)
+
+      if (success) {
+        toast.success('Logged in successfully!')
         // Login successful - redirect to dashboard
         router.push('/client-dashboard')
       } else {
-        // For any other credentials, still allow access (demo mode)
-        // Handle login error
-        router.push('/client-dashboard')
+        toast.error('Invalid email or password')
       }
-    }, 2000)
+    } catch (error) {
+      console.error('Login error:', error)
+      toast.error('An error occurred during login')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -229,12 +233,6 @@ function ClientLoginContent() {
             </motion.div>
           </motion.form>
 
-          {/* Demo Note */}
-          <motion.div variants={fadeInUp} className="text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              💡 Demo: Use any email and password to login
-            </p>
-          </motion.div>
 
           {/* Security Notice */}
           <motion.div variants={fadeInUp} className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
@@ -284,11 +282,11 @@ function ClientLoginContent() {
                         />
                       ))}
                     </div>
-                    
+
                     {/* Door */}
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-blue-600 rounded-t-lg" />
                   </div>
-                  
+
                   {/* Roof */}
                   <motion.div
                     className="absolute -top-2 left-0 w-24 h-3 bg-gray-300 rounded-t-lg"
@@ -415,9 +413,9 @@ function ClientLoginContent() {
           </motion.div>
         </div>
       </div>
-         </div>
-   )
- }
+    </div>
+  )
+}
 
 export default function ClientLoginPage() {
   return (

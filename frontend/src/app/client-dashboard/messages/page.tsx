@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   ChatBubbleLeftRightIcon,
   PaperClipIcon,
   PaperAirplaneIcon,
@@ -43,25 +43,11 @@ export default function ClientMessagesPage() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const chats = [
-    { id: 1, expert: { name: "Alex Chen", status: "online", project: "E-commerce Website Redesign" }, lastMessage: "I've completed the frontend mockups. Would you like to review them?", timestamp: "2 min ago", unreadCount: 2 },
-    { id: 2, expert: { name: "Maria Rodriguez", status: "offline", project: "Mobile App Development" }, lastMessage: "The iOS app is ready for testing. I'll send you the build link.", timestamp: "1 hour ago", unreadCount: 0 },
-    { id: 3, expert: { name: "David Kim", status: "online", project: "Database Optimization" }, lastMessage: "I need some clarification on the performance requirements.", timestamp: "3 hours ago", unreadCount: 1 },
-    { id: 4, expert: { name: "Sarah Johnson", status: "away", project: "API Integration" }, lastMessage: "Payment gateway integration is complete. Ready for testing.", timestamp: "1 day ago", unreadCount: 0 },
-    { id: 5, expert: { name: "Michael Brown", status: "offline", project: "UI/UX Design System" }, lastMessage: "Thanks for the feedback! I'll make those adjustments.", timestamp: "2 days ago", unreadCount: 0 }
-  ]
+  // Real empty state - chatting feature not implemented yet
+  const chats: any[] = []
+  const messages: any[] = []
 
-  const messages = [
-    { id: 1, sender: "expert", content: "Hi! I've started working on the e-commerce redesign project.", timestamp: "10:30 AM", status: "read" },
-    { id: 2, sender: "client", content: "Great! I'm excited to see the progress.", timestamp: "10:32 AM", status: "read" },
-    { id: 3, sender: "expert", content: "I've completed the initial wireframes. Would you like to review them?", timestamp: "11:15 AM", status: "read" },
-    { id: 4, sender: "client", content: "Yes, please share them. I'd like to see the homepage design first.", timestamp: "11:20 AM", status: "read" },
-    { id: 5, sender: "expert", content: "Perfect! I've uploaded the homepage mockups to the project files.", timestamp: "2:45 PM", status: "read" },
-    { id: 6, sender: "expert", content: "I've also included some alternative color schemes. Let me know which direction you prefer.", timestamp: "2:46 PM", status: "delivered" },
-    { id: 7, sender: "expert", content: "I've completed the frontend mockups. Would you like to review them?", timestamp: "3:30 PM", status: "sent" }
-  ]
-
-  const filteredChats = chats.filter(chat => 
+  const filteredChats = chats.filter(chat =>
     chat.expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chat.expert.project.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -105,13 +91,12 @@ export default function ClientMessagesPage() {
   return (
     <div className="h-[calc(100vh-120px)] w-full max-w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
       <div className="flex h-full w-full max-w-full">
-        
+
         {/* Conversation List */}
-        <motion.div 
-          variants={fadeInUp} 
-          className={`flex flex-col w-full sm:w-1/3 md:w-1/4 lg:w-96 border-r border-gray-200 dark:border-gray-700 ${
-            showChatView ? 'hidden sm:flex' : 'flex'
-          }`}
+        <motion.div
+          variants={fadeInUp}
+          className={`flex flex-col w-full sm:w-1/3 md:w-1/4 lg:w-96 border-r border-gray-200 dark:border-gray-700 ${showChatView ? 'hidden sm:flex' : 'flex'
+            }`}
         >
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
@@ -136,14 +121,18 @@ export default function ClientMessagesPage() {
 
           {/* Chat List */}
           <div className="flex-1 overflow-y-auto w-full max-w-full">
-            {filteredChats.map(chat => (
+            {filteredChats.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 mt-10">
+                <p>No active conversations.</p>
+                <p className="text-xs mt-2">Messages will appear here when you start a project.</p>
+              </div>
+            ) : filteredChats.map(chat => (
               <motion.div
                 key={chat.id}
                 variants={staggerItem}
                 onClick={() => handleChatSelect(chat.id)}
-                className={`p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                  selectedChat === chat.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                }`}
+                className={`p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedChat === chat.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  }`}
               >
                 <div className="flex items-start space-x-3">
                   <div className="relative flex-shrink-0">
@@ -172,11 +161,10 @@ export default function ClientMessagesPage() {
         </motion.div>
 
         {/* Chat Window */}
-        <motion.div 
-          variants={fadeInUp} 
-          className={`flex-1 flex flex-col w-full max-w-full min-w-0 ${
-            !showChatView ? 'hidden sm:flex' : 'flex'
-          }`}
+        <motion.div
+          variants={fadeInUp}
+          className={`flex-1 flex flex-col w-full max-w-full min-w-0 ${!showChatView ? 'hidden sm:flex' : 'flex'
+            }`}
         >
           {selectedChatData ? (
             <>
@@ -208,9 +196,8 @@ export default function ClientMessagesPage() {
               <div className="flex-1 w-full max-w-full min-w-0 overflow-y-auto p-2 sm:p-4 space-y-2">
                 {messages.map(msg => (
                   <motion.div key={msg.id} variants={staggerItem} className={`flex w-full max-w-full ${msg.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`w-fit max-w-[90%] sm:max-w-[85%] md:max-w-[75%] lg:max-w-[60%] break-words rounded-lg p-3 shadow overflow-hidden ${
-                      msg.sender === 'client' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
-                    }`}>
+                    <div className={`w-fit max-w-[90%] sm:max-w-[85%] md:max-w-[75%] lg:max-w-[60%] break-words rounded-lg p-3 shadow overflow-hidden ${msg.sender === 'client' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
+                      }`}>
                       <p className="text-sm">{msg.content}</p>
                       <div className="flex justify-between items-center mt-1 text-xs opacity-75">
                         <span>{msg.timestamp}</span>

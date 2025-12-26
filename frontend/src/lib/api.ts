@@ -24,22 +24,12 @@ export interface Testimonial {
   rating: number
 }
 
-// Basic configuration for API URL - ideally this comes from env vars
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+import api from './axios';
+
+// Basic configuration for API URL - handled by axios instance now
 
 export async function submitContactForm(data: ContactFormData): Promise<void> {
-  const response = await fetch(`${API_URL}/api/contact`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to submit form');
-  }
+  await api.post('/contact', data);
 }
 
 export async function fetchServices(): Promise<Service[]> {
