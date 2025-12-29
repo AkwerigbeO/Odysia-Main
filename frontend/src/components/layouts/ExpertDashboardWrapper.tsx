@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  HomeIcon, 
-  FolderIcon, 
-  ChatBubbleLeftRightIcon, 
-  CurrencyDollarIcon, 
-  UserIcon, 
+import {
+  HomeIcon,
+  FolderIcon,
+  ChatBubbleLeftRightIcon,
+  CurrencyDollarIcon,
+  UserIcon,
   QuestionMarkCircleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline'
@@ -18,7 +18,6 @@ import { useCurrency } from '@/lib/contexts/CurrencyContext'
 
 interface ExpertDashboardWrapperProps {
   children: React.ReactNode
-  activeSection?: string
 }
 
 const sidebarItems = [
@@ -31,52 +30,38 @@ const sidebarItems = [
   { id: 'support', label: 'Support & Help', icon: QuestionMarkCircleIcon, href: '/dashboard/support' }
 ]
 
-export default function ExpertDashboardWrapper({ children, activeSection = 'dashboard' }: ExpertDashboardWrapperProps) {
+export default function ExpertDashboardWrapper({ children }: { children: React.ReactNode }) {
   const { formatAmount } = useCurrency()
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const [notifications, setNotifications] = useState(3)
   const [messages, setMessages] = useState(2)
   const router = useRouter()
+  // Add usePathname
+  const pathname = require('next/navigation').usePathname()
 
-  // Sample notifications data for experts
+  // Determine active section from pathname
+  const activeSection = sidebarItems.find(item => {
+    if (item.id === 'dashboard' && pathname === '/dashboard') return true
+    if (item.id !== 'dashboard' && pathname?.startsWith(item.href)) return true
+    return false
+  })?.id || 'dashboard'
+
+  // Sample notifications data for experts (Keep placeholder for now but dynamic structure)
   const recentNotifications = [
     {
       id: 1,
-      type: 'deadline',
-      message: 'Project "E-commerce Website" milestone due in 2 days',
-      time: '2 hours ago',
-      urgent: true,
-      read: false
-    },
-    {
-      id: 2,
       type: 'approval',
-      message: 'Your submission for "Mobile App Design" has been approved',
+      message: 'Your profile has been verified',
       time: '1 day ago',
-      urgent: false,
-      read: false
-    },
-    {
-      id: 3,
-      type: 'payment',
-      message: `Payment of ${formatAmount(150000)} has been released to your account`,
-      time: '2 days ago',
-      urgent: false,
-      read: true
-    },
-    {
-      id: 4,
-      type: 'message',
-      message: 'New message from TechCorp Ltd regarding project updates',
-      time: '3 days ago',
       urgent: false,
       read: true
     }
   ]
 
   const userProfile = {
-    name: 'John Expert',
-    email: 'expert@odysia.com'
+    name: user?.name || 'Expert',
+    email: user?.email || '',
+    avatar: user?.name?.charAt(0) || 'E'
   }
 
   const handleLogout = () => {

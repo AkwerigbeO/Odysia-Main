@@ -15,67 +15,95 @@ import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
 import { useAuth } from '@/lib/contexts/AuthContext'
 
+import { useState, useEffect } from 'react'
+import api from '@/lib/axios'
+
 export default function DashboardHome() {
   const router = useRouter()
   const { formatAmount } = useCurrency()
   const { user } = useAuth()
+  const [stats, setStats] = useState([
+    {
+      title: 'Ongoing Projects',
+      value: '0',
+      icon: FolderIcon,
+      color: 'bg-blue-500',
+      change: '0 from last month'
+    },
+    {
+      title: 'Total Earnings',
+      value: formatAmount(0),
+      icon: CurrencyDollarIcon,
+      color: 'bg-green-500',
+      change: '+0% from last month'
+    },
+    {
+      title: 'Pending Tasks',
+      value: '0',
+      icon: ClockIcon,
+      color: 'bg-orange-500',
+      change: '-0 from last week'
+    }
+  ])
+  const [recentEarnings, setRecentEarnings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchExpertStats = async () => {
+      try {
+        const { data } = await api.get('/expert/stats')
+
+        setStats([
+          {
+            title: 'Ongoing Projects',
+            value: data.ongoingProjects.toString(),
+            icon: FolderIcon,
+            color: 'bg-blue-500',
+            change: '+0 from last month' // Hardcoded change for now
+          },
+          {
+            title: 'Total Earnings',
+            value: formatAmount(data.totalEarnings),
+            icon: CurrencyDollarIcon,
+            color: 'bg-green-500',
+            change: '+0% from last month' // Hardcoded change for now
+          },
+          {
+            title: 'Pending Tasks',
+            value: data.pendingTasks.toString(),
+            icon: ClockIcon,
+            color: 'bg-orange-500',
+            change: '-0 from last week' // Hardcoded change for now
+          }
+        ])
+        setRecentEarnings(data.recentEarnings || [])
+      } catch (error) {
+        console.error('Failed to fetch expert stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchExpertStats()
+    }
+  }, [user, formatAmount])
 
   const handleNavigation = (path: string) => {
     router.push(path)
   }
-  const stats = [
-    {
-      title: 'Ongoing Projects',
-      value: '2',
-      icon: FolderIcon,
-      color: 'bg-blue-500',
-      change: '+1 from last month'
-    },
-    {
-      title: 'This Month',
-      value: formatAmount(350000),
-      icon: CurrencyDollarIcon,
-      color: 'bg-green-500',
-      change: '+12% from last month'
-    },
-    {
-      title: 'Pending Tasks',
-      value: '3',
-      icon: ClockIcon,
-      color: 'bg-orange-500',
-      change: '-2 from last week'
-    }
-  ]
 
+  // Placeholder notifications for now (or fetch from /notifications/activity)
   const notifications = [
     {
       id: 1,
-      type: 'deadline',
-      message: 'Project &quot;E-commerce Website&quot; milestone due in 2 days',
-      time: '2 hours ago',
-      urgent: true
-    },
-    {
-      id: 2,
-      type: 'approval',
-      message: 'Your submission for &quot;Mobile App Design&quot; has been approved',
-      time: '1 day ago',
-      urgent: false
-    },
-    {
-      id: 3,
-      type: 'payment',
-      message: `Payment of ${formatAmount(150000)} has been released to your account`,
-      time: '2 days ago',
+      type: 'info',
+      message: 'Welcome to your expert dashboard!',
+      time: 'Just now',
       urgent: false
     }
   ]
 
-  const recentEarnings = [
-    { project: 'E-commerce Website', amount: formatAmount(200000), status: 'completed' },
-    { project: 'Mobile App Design', amount: formatAmount(150000), status: 'pending' },
-    { project: 'Brand Identity', amount: formatAmount(100000), status: 'in-progress' }
-  ]
 
   return (
     <motion.div
@@ -149,16 +177,16 @@ export default function DashboardHome() {
                 key={notification.id}
                 whileHover={{ x: 5 }}
                 className={`flex items-start space-x-3 p-3 rounded-lg transition-colors ${notification.urgent
-                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                    : 'bg-gray-50 dark:bg-dark-surface'
+                  ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                  : 'bg-gray-50 dark:bg-dark-surface'
                   }`}
               >
                 <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${notification.urgent ? 'bg-red-500' : 'bg-green-500'
                   }`} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium ${notification.urgent
-                      ? 'text-red-900 dark:text-red-100'
-                      : 'text-gray-900 dark:text-white'
+                    ? 'text-red-900 dark:text-red-100'
+                    : 'text-gray-900 dark:text-white'
                     }`}>
                     {notification.message}
                   </p>

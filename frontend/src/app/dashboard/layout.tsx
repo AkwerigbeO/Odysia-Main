@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { AuthProvider } from '@/lib/contexts/AuthContext'
 import DashboardAuthGuard from '@/components/dashboard/DashboardAuthGuard'
 import ExpertDashboardWrapper from '@/components/layouts/ExpertDashboardWrapper'
 
@@ -14,12 +13,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <AuthProvider>
-      <DashboardAuthGuard>
-        <ExpertDashboardWrapper>
-          {children}
-        </ExpertDashboardWrapper>
-      </DashboardAuthGuard>
-    </AuthProvider>
+    <DashboardAuthGuard>
+      <ExpertDashboardWrapper>
+        {children}
+      </ExpertDashboardWrapper>
+    </DashboardAuthGuard>
   )
 }

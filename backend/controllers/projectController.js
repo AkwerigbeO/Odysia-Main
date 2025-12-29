@@ -1,13 +1,33 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
 
-// @desc    Get user projects
+// @desc    Get all projects
 // @route   GET /api/projects
 // @access  Private
 const getProjects = async (req, res, next) => {
     try {
-        const projects = await Project.find({ client: req.user.id });
-        res.status(200).json(projects);
+        let query = {};
+
+        // If user is client, show their projects
+        // If user is expert, show projects where they are assigned
+        if (req.user.role === 'client') {
+            query = { client: req.user._id };
+        } else if (req.user.role === 'expert') {
+            query = { expert: req.user._id };
+        } else if (req.user.role === 'admin') {
+            // Admin sees all, or can filter
+        }
+
+        const projects = await Project.find(query)
+            .populate('client', 'name email')
+            .populate('expert', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: projects.length,
+            data: projects
+        });
     } catch (error) {
         next(error);
     }

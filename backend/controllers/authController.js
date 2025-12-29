@@ -16,7 +16,11 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res, next) => {
     try {
-        const { name, email, password, phone, clientType, companyName, country, communicationMethod } = req.body;
+        const {
+            name, email, password, phone, clientType, companyName, country, communicationMethod,
+            // Expert fields
+            role, skills, bio, title, hourlyRate, portfolioLink, githubLink, linkedinLink
+        } = req.body;
 
         // Check if user exists
         const userExists = await User.findOne({ email });
@@ -32,10 +36,19 @@ const registerUser = async (req, res, next) => {
             email,
             password,
             phone,
+            role: role || 'user', // Default to 'user' if not specified
             clientType,
             companyName,
             country,
-            communicationMethod
+            communicationMethod,
+            // Expert fields
+            skills,
+            bio,
+            title,
+            hourlyRate,
+            portfolioLink,
+            githubLink,
+            linkedinLink
         });
 
         if (user) {
@@ -175,10 +188,84 @@ const resetPassword = async (req, res, next) => {
     }
 };
 
+const ExpertApplication = require('../models/ExpertApplication');
+
+// @desc    Complete expert signup (set password and create user)
+// @route   POST /api/auth/expert-setup
+// @access  Public
+const completeExpertSignup = async (req, res, next) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            res.status(400);
+            throw new Error('Missing token or password');
+        }
+
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+        const applicationId = decoded.applicationId;
+
+        const application = await ExpertApplication.findById(applicationId);
+
+        if (!application) {
+            res.status(404);
+            throw new Error('Application not found');
+        }
+
+        if (application.status !== 'approved') {
+            res.status(400);
+            throw new Error('Application is not approved');
+        }
+
+        // Check if user already exists (extra safety)
+        const userExists = await User.findOne({ email: application.email });
+        if (userExists) {
+            res.status(400);
+            throw new Error('User already exists');
+        }
+
+        // Create user from application data
+        const user = await User.create({
+            name: application.fullName,
+            email: application.email,
+            password: password, // This will be hashed by pre-save hook
+            phone: application.phone,
+            country: application.country,
+            role: 'expert',
+            clientType: 'individual',
+            communicationMethod: 'email',
+            skills: application.skills,
+            bio: application.bio,
+            portfolioLink: application.portfolioLink,
+            githubLink: application.githubLink,
+            linkedinLink: application.linkedinLink,
+            resume: application.resume,
+            verified: true // Since they were approved manually
+        });
+
+        // Generate Login Token
+        const loginToken = generateToken(user._id);
+
+        res.status(201).json({
+            success: true,
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            token: loginToken
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     getMe,
     forgotPassword,
     resetPassword,
+    completeExpertSignup
 };

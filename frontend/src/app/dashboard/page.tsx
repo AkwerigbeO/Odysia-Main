@@ -1,9 +1,9 @@
 'use client'
 
-import DashboardHome from '@/components/dashboard/DashboardHome'
+import ExpertDashboardHome from '@/components/dashboard/ExpertDashboardHome'
 
 export default function DashboardPage() {
   return (
-    <DashboardHome />
+    <ExpertDashboardHome />
   )
 }

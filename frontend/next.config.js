@@ -38,6 +38,18 @@ const nextConfig = {
       },
     ]
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5000/api/:path*',
+      },
+      {
+        source: '/uploads/:path*',
+        destination: 'http://localhost:5000/uploads/:path*',
+      },
+    ]
+  },
   // Bundle analyzer (optional for debugging)
   ...(process.env.ANALYZE === 'true' && {
     webpack: (config) => {

@@ -35,9 +35,15 @@ function ExpertLoginContent() {
     setError('')
 
     try {
-      const success = await login(email, password)
-      if (success) {
-        router.push('/dashboard')
+      const user = await login(email, password)
+      if (user) {
+        if (user.role === 'expert') {
+          router.push('/dashboard')
+        } else if (user.role === 'client') {
+          router.replace('/client-dashboard')
+        } else {
+          router.push('/')
+        }
       } else {
         setError('Invalid credentials. Please try again.')
       }
@@ -51,7 +57,7 @@ function ExpertLoginContent() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-bg dark:to-gray-900">
       {/* Header */}
-      <motion.header 
+      <motion.header
         className="bg-white dark:bg-dark-surface shadow-sm border-b border-gray-200 dark:border-dark-border"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -60,7 +66,7 @@ function ExpertLoginContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo - Clickable to homepage */}
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               className="flex-shrink-0"
             >

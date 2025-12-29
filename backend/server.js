@@ -37,6 +37,9 @@ app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/expert', require('./routes/expertRoutes'));
+app.use('/api/expert-applications', require('./routes/expertAppRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');

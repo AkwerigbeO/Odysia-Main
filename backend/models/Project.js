@@ -6,6 +6,10 @@ const projectSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    expert: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
     title: {
         type: String,
         required: true
@@ -24,6 +28,23 @@ const projectSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    milestones: [{
+        title: {
+            type: String,
+            required: true
+        },
+        description: String,
+        amount: {
+            type: Number,
+            required: true
+        },
+        status: {
+            type: String,
+            enum: ['pending', 'in_progress', 'completed', 'paid'],
+            default: 'pending'
+        },
+        dueDate: Date
+    }],
     startDate: Date,
     completionDate: Date
 }, {

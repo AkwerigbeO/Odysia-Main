@@ -18,18 +18,34 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'admin', 'expert', 'client'],
         default: 'user',
     },
     phone: {
         type: String,
         required: true
     },
+    // Client specific fields
     clientType: {
         type: String,
         enum: ['individual', 'business', 'startup'],
     },
     companyName: String,
+
+    // Expert specific fields
+    skills: [String],
+    bio: String,
+    title: String,
+    hourlyRate: Number,
+    portfolioLink: String,
+    githubLink: String,
+    linkedinLink: String,
+    resume: String, // Path to resume file
+    verified: {
+        type: Boolean,
+        default: false
+    },
+
     country: {
         type: String,
         required: true

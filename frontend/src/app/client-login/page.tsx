@@ -60,12 +60,19 @@ function ClientLoginContent() {
     setIsLoading(true)
 
     try {
-      const success = await login(email, password)
+      const user = await login(email, password)
 
-      if (success) {
+      if (user) {
         toast.success('Logged in successfully!')
-        // Login successful - redirect to dashboard
-        router.push('/client-dashboard')
+
+        // Redirect based on role
+        if (user.role === 'admin') {
+          router.push('/admin/dashboard')
+        } else if (user.role === 'expert') {
+          router.push('/dashboard') // Expert dashboard
+        } else {
+          router.push('/client-dashboard') // Client dashboard
+        }
       } else {
         toast.error('Invalid email or password')
       }

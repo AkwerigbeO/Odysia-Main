@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  FolderIcon, 
-  ClockIcon, 
+import {
+  FolderIcon,
+  ClockIcon,
   UserIcon,
   EyeIcon,
   CheckCircleIcon,
@@ -14,87 +14,57 @@ import {
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import { useRouter } from 'next/navigation'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import api from '@/lib/axios'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export default function Projects() {
   const [filter, setFilter] = useState('all')
+  const [projects, setProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { formatAmount } = useCurrency()
+  const { user } = useAuth()
 
-  const projects = [
-    {
-      id: 1,
-      name: 'E-commerce Website',
-      client: 'TechCorp Ltd',
-      currentMilestone: 'Frontend Development',
-      deadline: '2024-02-15',
-      status: 'in-progress',
-      progress: 65,
-      budget: formatAmount(500000),
-      description: 'Full-stack e-commerce platform with payment integration and admin dashboard.'
-    },
-    {
-      id: 2,
-      name: 'Mobile App Design',
-      client: 'StartupXYZ',
-      currentMilestone: 'UI/UX Design',
-      deadline: '2024-02-10',
-      status: 'completed',
-      progress: 100,
-      budget: formatAmount(300000),
-      description: 'Modern mobile app design with intuitive user interface and smooth animations.'
-    },
-    {
-      id: 3,
-      name: 'Brand Identity Package',
-      client: 'Creative Agency',
-      currentMilestone: 'Logo Design',
-      deadline: '2024-02-20',
-      status: 'pending',
-      progress: 25,
-      budget: formatAmount(200000),
-      description: 'Complete brand identity including logo, color palette, and brand guidelines.'
-    },
-    {
-      id: 4,
-      name: 'Web Application',
-      client: 'Enterprise Solutions',
-      currentMilestone: 'Backend Development',
-      deadline: '2024-03-01',
-      status: 'in-progress',
-      progress: 40,
-      budget: formatAmount(800000),
-      description: 'Scalable web application with advanced features and real-time updates.'
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const { data } = await api.get('/projects')
+        setProjects(data.data)
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    if (user) {
+      fetchProjects()
+    }
+  }, [user])
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-500'
-      case 'in-progress':
-        return 'bg-blue-500'
-      case 'pending':
-        return 'bg-orange-500'
-      default:
-        return 'bg-gray-500'
+      case 'completed': return 'bg-green-500'
+      case 'active': return 'bg-blue-500' // Changed from in-progress to match backend enum default? usually active
+      case 'in_progress': return 'bg-blue-500'
+      case 'pending': return 'bg-orange-500'
+      default: return 'bg-gray-500'
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />
-      case 'in-progress':
-        return <ClockIcon className="h-5 w-5 text-blue-500" />
-      case 'pending':
-        return <PauseIcon className="h-5 w-5 text-orange-500" />
-      default:
-        return <ExclamationTriangleIcon className="h-5 w-5 text-gray-500" />
+      case 'completed': return <CheckCircleIcon className="h-5 w-5 text-green-500" />
+      case 'active': return <ClockIcon className="h-5 w-5 text-blue-500" />
+      case 'in_progress': return <ClockIcon className="h-5 w-5 text-blue-500" />
+      case 'pending': return <PauseIcon className="h-5 w-5 text-orange-500" />
+      default: return <ExclamationTriangleIcon className="h-5 w-5 text-gray-500" />
     }
   }
 
   const filteredProjects = projects.filter(project => {
     if (filter === 'all') return true
+    if (filter === 'in_progress' && (project.status === 'active' || project.status === 'in_progress')) return true
     return project.status === filter
   })
 
@@ -115,7 +85,7 @@ export default function Projects() {
             Manage and track all your ongoing projects
           </p>
         </div>
-        
+
         <div className="mt-4 sm:mt-0">
           <button className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors font-medium mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
             + New Project
@@ -127,34 +97,33 @@ export default function Projects() {
       <motion.div variants={staggerItem} className="flex flex-wrap sm:flex-nowrap space-x-1 bg-gray-100 dark:bg-dark-surface rounded-lg p-1">
         {[
           { key: 'all', label: 'All Projects', count: projects.length },
-          { key: 'in-progress', label: 'In Progress', count: projects.filter(p => p.status === 'in-progress').length },
+          { key: 'active', label: 'In Progress', count: projects.filter(p => p.status === 'active' || p.status === 'in_progress').length },
           { key: 'completed', label: 'Completed', count: projects.filter(p => p.status === 'completed').length },
           { key: 'pending', label: 'Pending', count: projects.filter(p => p.status === 'pending').length }
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              filter === tab.key
-                ? 'bg-white dark:bg-dark-card text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+            onClick={() => setFilter(tab.key === 'active' ? 'in_progress' : tab.key)} // Maps active to in_progress if needed, or update filter logic
+            className={`flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${filter === tab.key || (tab.key === 'active' && filter === 'in_progress')
+              ? 'bg-white dark:bg-dark-card text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
           >
             <span className="hidden sm:inline">{tab.label}</span>
-            <span className="sm:hidden">{tab.key === 'all' ? 'All' : tab.key === 'in-progress' ? 'Active' : tab.key === 'completed' ? 'Done' : 'Pending'}</span>
+            <span className="sm:hidden">{tab.key === 'all' ? 'All' : tab.key === 'active' ? 'Active' : tab.key === 'completed' ? 'Done' : 'Pending'}</span>
             <span className="ml-1">({tab.count})</span>
           </button>
         ))}
       </motion.div>
 
       {/* Projects Grid */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
         {filteredProjects.map((project, index) => (
           <motion.div
-            key={project.id}
+            key={project._id}
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
@@ -167,18 +136,18 @@ export default function Projects() {
                 <div className="flex items-center space-x-2 mb-2">
                   <FolderIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {project.name}
+                    {project.title}
                   </h3>
                   {getStatusIcon(project.status)}
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                   <UserIcon className="h-4 w-4" />
-                  <span>{project.client}</span>
+                  <span>{project.client?.name || 'Unknown Client'}</span>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {project.budget}
+                  {formatAmount(project.budget)}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Budget
@@ -187,47 +156,38 @@ export default function Projects() {
             </div>
 
             {/* Project Description */}
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
               {project.description}
             </p>
 
             {/* Current Milestone */}
-            <div className="mb-4">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Current Milestone
-              </p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {project.currentMilestone}
-              </p>
-            </div>
+            {project.milestones && project.milestones.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Latest Milestone
+                </p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {project.milestones[0].title}
+                </p>
+              </div>
+            )}
 
-            {/* Progress Bar */}
+            {/* Progress Bar (Placeholder logic for now, or calculate from completed milestones) */}
             <div className="mb-4">
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                <span>Progress</span>
-                <span>{project.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-dark-surface rounded-full h-2">
-                <motion.div
-                  className={`h-2 rounded-full ${getStatusColor(project.status)}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${project.progress}%` }}
-                  transition={{ duration: 1, delay: index * 0.1 }}
-                />
-              </div>
+              {/* Logic to calculate progress could be here */}
             </div>
 
             {/* Deadline and Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <ClockIcon className="h-4 w-4" />
-                <span>Due: {new Date(project.deadline).toLocaleDateString()}</span>
+                <span>Due: {project.completionDate ? new Date(project.completionDate).toLocaleDateString() : 'N/A'}</span>
               </div>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                onClick={() => router.push(`/dashboard/projects/${project._id}`)}
                 className="flex items-center justify-center sm:justify-start space-x-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
               >
                 <EyeIcon className="h-4 w-4" />
@@ -240,7 +200,7 @@ export default function Projects() {
 
       {/* Empty State */}
       {filteredProjects.length === 0 && (
-        <motion.div 
+        <motion.div
           variants={staggerItem}
           className="text-center py-12"
         >
@@ -249,7 +209,7 @@ export default function Projects() {
             No projects found
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {filter === 'all' 
+            {filter === 'all'
               ? 'You don\'t have any projects yet. Start by creating your first project.'
               : `No ${filter} projects found.`
             }

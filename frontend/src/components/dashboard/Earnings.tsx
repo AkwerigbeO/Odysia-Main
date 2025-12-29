@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   CurrencyDollarIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
@@ -13,112 +13,101 @@ import {
 } from '@heroicons/react/24/outline'
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import api from '@/lib/axios'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 export default function Earnings() {
   const [selectedPeriod, setSelectedPeriod] = useState('month')
+  const [earningsData, setEarningsData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const { formatAmount } = useCurrency()
+  const { user } = useAuth()
 
-  const earningsData = [
-    {
-      id: 1,
-      project: 'E-commerce Website',
-      client: 'TechCorp Ltd',
-      amount: 200000,
-      status: 'completed',
-      date: '2024-02-01',
-      escrowStatus: 'released'
-    },
-    {
-      id: 2,
-      project: 'Mobile App Design',
-      client: 'StartupXYZ',
-      amount: 150000,
-      status: 'pending',
-      date: '2024-02-05',
-      escrowStatus: 'held'
-    },
-    {
-      id: 3,
-      project: 'Brand Identity Package',
-      client: 'Creative Agency',
-      amount: 100000,
-      status: 'in-progress',
-      date: '2024-02-10',
-      escrowStatus: 'held'
-    },
-    {
-      id: 4,
-      project: 'Web Application',
-      client: 'Enterprise Solutions',
-      amount: 300000,
-      status: 'completed',
-      date: '2024-01-15',
-      escrowStatus: 'released'
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        const { data } = await api.get('/expert/earnings')
+        setEarningsData(data.data)
+      } catch (error) {
+        console.error('Failed to fetch earnings:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    if (user) {
+      fetchEarnings()
+    }
+  }, [user])
+
+  // Calculate stats from real data
+  const totalEarnings = earningsData
+    .filter(item => item.status === 'completed' || item.status === 'paid')
+    .reduce((sum, item) => sum + item.amount, 0)
+
+  const thisMonthEarnings = earningsData
+    .filter(item => {
+      const itemDate = new Date(item.createdAt)
+      const now = new Date()
+      return itemDate.getMonth() === now.getMonth() &&
+        itemDate.getFullYear() === now.getFullYear() &&
+        (item.status === 'completed' || item.status === 'paid')
+    })
+    .reduce((sum, item) => sum + item.amount, 0)
+
+  const escrowBalance = earningsData
+    .filter(item => item.status === 'pending') // Assuming pending means held in escrow
+    .reduce((sum, item) => sum + item.amount, 0)
+
+  const availableBalance = totalEarnings // Simplified for now, real logic might track withdrawals
 
   const stats = [
     {
       title: 'Total Earnings',
-      value: formatAmount(750000),
-      change: '+15%',
+      value: formatAmount(totalEarnings),
+      change: '+0%', // Placeholder calculation
       changeType: 'positive',
       icon: CurrencyDollarIcon
     },
     {
       title: 'This Month',
-      value: formatAmount(350000),
-      change: '+12%',
+      value: formatAmount(thisMonthEarnings),
+      change: '+0%',
       changeType: 'positive',
       icon: BanknotesIcon
     },
     {
       title: 'Escrow Balance',
-      value: formatAmount(250000),
-      change: '+8%',
-      changeType: 'positive',
+      value: formatAmount(escrowBalance),
+      change: 'Held',
+      changeType: 'neutral',
       icon: ClockIcon
     },
     {
       title: 'Pending Payments',
-      value: formatAmount(150000),
-      change: '-5%',
-      changeType: 'negative',
+      value: formatAmount(escrowBalance), // simplified matching escrow
+      change: 'To Clear',
+      changeType: 'neutral',
       icon: ExclamationTriangleIcon
     }
   ]
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'pending':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      case 'paid': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      case 'pending': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+      case 'in-progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
     }
   }
 
   const getEscrowColor = (status: string) => {
-    switch (status) {
-      case 'released':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'held':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      case 'under-review':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-    }
+    // Map transaction status to visual escrow status
+    if (status === 'completed' || status === 'paid') return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+    if (status === 'pending') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
   }
-
-  const totalEarnings = earningsData.reduce((sum, item) => sum + item.amount, 0)
-  const escrowBalance = earningsData
-    .filter(item => item.escrowStatus === 'held')
-    .reduce((sum, item) => sum + item.amount, 0)
-  const availableBalance = totalEarnings - escrowBalance
 
   return (
     <motion.div
@@ -137,7 +126,7 @@ export default function Earnings() {
             Track your earnings and manage payments
           </p>
         </div>
-        
+
         <div className="mt-4 sm:mt-0 flex space-x-2">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -150,7 +139,7 @@ export default function Earnings() {
       </motion.div>
 
       {/* Stats Cards */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
@@ -171,9 +160,8 @@ export default function Earnings() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {stat.value}
                 </p>
-                <div className={`flex items-center space-x-1 mt-1 ${
-                  stat.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                }`}>
+                <div className={`flex items-center space-x-1 mt-1 ${stat.changeType === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
                   {stat.changeType === 'positive' ? (
                     <ArrowTrendingUpIcon className="h-4 w-4" />
                   ) : (
@@ -201,11 +189,10 @@ export default function Earnings() {
           <button
             key={period.key}
             onClick={() => setSelectedPeriod(period.key)}
-            className={`flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              selectedPeriod === period.key
-                ? 'bg-white dark:bg-dark-card text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
+            className={`flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${selectedPeriod === period.key
+              ? 'bg-white dark:bg-dark-card text-primary-600 dark:text-primary-400 shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
           >
             {period.label}
           </button>
@@ -213,7 +200,7 @@ export default function Earnings() {
       </motion.div>
 
       {/* Earnings Table */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden"
       >
@@ -222,7 +209,7 @@ export default function Earnings() {
             Earnings by Project
           </h2>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-dark-surface">
@@ -250,7 +237,7 @@ export default function Earnings() {
             <tbody className="bg-white dark:bg-dark-card divide-y divide-gray-200 dark:divide-dark-border">
               {earningsData.map((earning, index) => (
                 <motion.tr
-                  key={earning.id}
+                  key={earning._id}
                   variants={fadeInUp}
                   initial="hidden"
                   animate="visible"
@@ -260,13 +247,13 @@ export default function Earnings() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {earning.project}
+                        {earning.project?.title || earning.description || 'N/A'}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {earning.client}
+                      {earning.payer?.name || 'Sistema'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -280,12 +267,12 @@ export default function Earnings() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEscrowColor(earning.escrowStatus)}`}>
-                      {earning.escrowStatus.replace('-', ' ')}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEscrowColor(earning.status)}`}>
+                      {earning.status === 'pending' ? 'Held' : 'Released'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(earning.date).toLocaleDateString()}
+                    {new Date(earning.createdAt).toLocaleDateString()}
                   </td>
                 </motion.tr>
               ))}
@@ -295,7 +282,7 @@ export default function Earnings() {
       </motion.div>
 
       {/* Balance Summary */}
-      <motion.div 
+      <motion.div
         variants={staggerItem}
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >

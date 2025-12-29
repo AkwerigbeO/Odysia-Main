@@ -10,14 +10,22 @@ interface DashboardAuthGuardProps {
 }
 
 export default function DashboardAuthGuard({ children }: DashboardAuthGuardProps) {
-  const { isExpertLoggedIn, loading } = useAuth()
+  const { user, isAuthenticated, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !isExpertLoggedIn) {
-      router.push('/expert-login')
+    if (!loading) {
+      if (!isAuthenticated) {
+        router.push('/expert-login')
+      } else if (user?.role !== 'expert') {
+        if (user?.role === 'client') {
+          router.push('/client-dashboard')
+        } else {
+          router.push('/')
+        }
+      }
     }
-  }, [isExpertLoggedIn, loading, router])
+  }, [isAuthenticated, user, loading, router])
 
   if (loading) {
     return (
@@ -34,7 +42,7 @@ export default function DashboardAuthGuard({ children }: DashboardAuthGuardProps
     )
   }
 
-  if (!isExpertLoggedIn) {
+  if (!isAuthenticated || user?.role !== 'expert') {
     return null // Will redirect to login
   }
 

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { 
+import { useAuth } from '@/lib/contexts/AuthContext'
+import {
   UserIcon,
   EnvelopeIcon,
   PhoneIcon,
@@ -114,6 +115,7 @@ interface FormErrors {
 
 export default function ExpertApplication() {
   const router = useRouter()
+  const { register } = useAuth()
   const [formData, setFormData] = useState<ApplicationData>({
     fullName: '',
     email: '',
@@ -126,13 +128,15 @@ export default function ExpertApplication() {
     bio: '',
     resume: null
   })
-  
+
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
+  const [submitError, setSubmitError] = useState('')
 
   // Handle skills selection
   const handleSkillToggle = (skill: string) => {
+    setSubmitError('') // Clear error on interaction
     setFormData(prev => ({
       ...prev,
       skills: prev.skills.includes(skill)
@@ -150,10 +154,10 @@ export default function ExpertApplication() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate form
-    const newErrors: FormErrors = {}
-    
+    const newErrors: any = {}
+
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address'
@@ -162,23 +166,42 @@ export default function ExpertApplication() {
     if (formData.skills.length === 0) newErrors.skills = 'Please select at least one skill'
     if (!formData.bio.trim()) newErrors.bio = 'Bio is required'
     if (formData.bio.length < 50) newErrors.bio = 'Bio must be at least 50 characters'
-    
+
     setErrors(newErrors)
-    
+
     if (Object.keys(newErrors).length === 0) {
       setIsSubmitting(true)
-      
+
       try {
-        // TODO: Implement actual API call to submit application
-        console.log('Application data to submit:', formData)
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Show success modal
-        setShowSuccessModal(true)
+        // Use direct API call instead of useAuth().register
+        const response = await fetch('/api/expert-applications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            country: formData.country,
+            skills: formData.skills,
+            bio: formData.bio,
+            githubLink: formData.githubLink,
+            portfolioLink: formData.portfolioLink,
+            linkedinLink: formData.linkedinLink
+          })
+        });
+
+        if (response.ok) {
+          setShowSuccessModal(true)
+        } else {
+          const data = await response.json();
+          setSubmitError(data.message || 'Application submission failed. Please try again.')
+        }
+
       } catch (error) {
         console.error('Application submission error:', error)
+        setSubmitError('An unexpected error occurred. Please try again.')
       } finally {
         setIsSubmitting(false)
       }
@@ -213,6 +236,11 @@ export default function ExpertApplication() {
             className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl p-6 sm:p-8"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
+              {submitError && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400 text-center">{submitError}</p>
+                </div>
+              )}
               {/* Personal Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Full Name */}
@@ -226,9 +254,8 @@ export default function ExpertApplication() {
                       type="text"
                       value={formData.fullName}
                       onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.fullName ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.fullName ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -248,9 +275,8 @@ export default function ExpertApplication() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.email ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -270,9 +296,8 @@ export default function ExpertApplication() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -291,9 +316,8 @@ export default function ExpertApplication() {
                     <select
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                        errors.country ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.country ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                        } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                     >
                       <option value="">Select your country</option>
                       {COUNTRIES.map(country => (
@@ -395,9 +419,8 @@ export default function ExpertApplication() {
                     value={formData.bio}
                     onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                     rows={4}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${
-                      errors.bio ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
-                    } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors ${errors.bio ? 'border-red-500' : 'border-gray-300 dark:border-dark-border'
+                      } bg-white dark:bg-dark-card text-gray-900 dark:text-white`}
                     placeholder="Describe your professional background, key achievements, and what makes you an expert in your field..."
                   />
                 </div>
@@ -444,7 +467,7 @@ export default function ExpertApplication() {
               {/* Info Note */}
               <div className="text-center text-gray-600 dark:text-gray-400">
                 <p className="text-sm">
-                  Your application will be reviewed by our team within 3-5 business days. 
+                  Your application will be reviewed by our team within 3-5 business days.
                   We&apos;ll notify you via email about the status of your application.
                 </p>
               </div>

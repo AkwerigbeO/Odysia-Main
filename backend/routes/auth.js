@@ -6,6 +6,7 @@ const {
     getMe,
     forgotPassword,
     resetPassword,
+    completeExpertSignup
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const {
@@ -19,5 +20,6 @@ router.post('/login', validateRequest(loginSchema), loginUser);
 router.get('/me', protect, getMe);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
+router.post('/expert-setup', completeExpertSignup);
 
 module.exports = router;

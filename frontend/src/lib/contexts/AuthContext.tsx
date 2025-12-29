@@ -21,12 +21,22 @@ export interface RegistrationData {
   companyName?: string
   country: string
   communicationMethod: string
+  // Expert fields
+  role?: string
+  skills?: string[]
+  bio?: string
+  title?: string
+  hourlyRate?: number
+  portfolioLink?: string
+  githubLink?: string
+  linkedinLink?: string
+  verified?: boolean
 }
 
 interface AuthContextType {
   user: User | null
   token: string | null
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<User | false>
   register: (userData: RegistrationData) => Promise<boolean>
   forgotPassword: (email: string) => Promise<boolean>
   resetPassword: (password: string, token: string) => Promise<boolean>
@@ -65,20 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser()
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<User | false> => {
     try {
       const { data } = await api.post('/auth/login', { email, password })
       localStorage.setItem('token', data.token)
       setToken(data.token)
-      setUser({
+      const userData = {
         _id: data._id,
         name: data.name,
         email: data.email,
         role: data.role || 'user',
-      })
-      // Optional: Refresh user data to get full object if login response is partial
-      // loadUser(); 
-      return true
+      }
+      setUser(userData)
+      return userData
     } catch (error) {
       console.error('Login failed', error)
       return false
