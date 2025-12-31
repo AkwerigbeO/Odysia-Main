@@ -1,6 +1,6 @@
-# Odysia Event Management Platform
+# Odysia Talent Management Platform
 
-This is the monorepo for the Odysia Event Management Platform.
+This is the monorepo for the Odysia Talent Management Platform.
 
 ## Structure
 
