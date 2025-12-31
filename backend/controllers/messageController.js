@@ -7,12 +7,15 @@ const User = require('../models/User');
 exports.getConversations = async (req, res) => {
     try {
         const userId = req.user._id;
+        console.log('Fetching conversations for user:', userId);
 
         // Find all messages where current user is sender or recipient
         // We need to group them by the OTHER party to form unique conversations
         const messages = await Message.find({
             $or: [{ sender: userId }, { recipient: userId }]
         }).sort({ createdAt: -1 });
+
+        console.log(`Found ${messages.length} raw messages involving this user.`);
 
         const conversationsMap = new Map();
 
@@ -32,11 +35,14 @@ exports.getConversations = async (req, res) => {
             }
         }
 
+        console.log(`Identified ${conversationsMap.size} unique conversation partners.`);
+
         const conversationList = [];
         for (const [otherPartyId, data] of conversationsMap) {
             const otherUser = await User.findById(otherPartyId).select('name role email avatar'); // Add avatar if exists
 
             if (otherUser) {
+                console.log(`Found user details for: ${otherUser.name} (${otherPartyId})`);
                 // Count unread messages from this user
                 const unreadCount = await Message.countDocuments({
                     sender: otherPartyId,
@@ -50,8 +56,12 @@ exports.getConversations = async (req, res) => {
                     lastMessageTime: data.lastMessage.createdAt,
                     unreadCount
                 });
+            } else {
+                console.log(`Could not find user details for ID: ${otherPartyId}`);
             }
         }
+
+        console.log(`Returning ${conversationList.length} conversations.`);
 
         res.status(200).json({
             success: true,
@@ -60,7 +70,7 @@ exports.getConversations = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error('Error in getConversations:', error);
         res.status(500).json({ success: false, error: 'Server Error' });
     }
 };

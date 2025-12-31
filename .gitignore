@@ -15,7 +15,9 @@ yarn-error.log*
 
 # Environment variables
 .env
-.env*.local
+.env.local
+.env.*.local
+.env.*
 
 # Build outputs
 dist/
@@ -29,3 +31,6 @@ next-env.d.ts
 
 # Backend specific (if any, e.g. uploads)
 backend/uploads/
+seed_*.js
+backend/seed_*.js
+*.local

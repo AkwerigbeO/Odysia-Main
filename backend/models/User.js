@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema({
     githubLink: String,
     linkedinLink: String,
     resume: String, // Path to resume file
+    avatar: String, // GridFS file ID for profile picture
     verified: {
         type: Boolean,
         default: false

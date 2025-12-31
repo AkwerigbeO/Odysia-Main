@@ -24,6 +24,9 @@ if (process.env.NODE_ENV !== 'test') {
   mongoose.connect(process.env.MONGO_URI)
     .then(() => {
       console.log('MongoDB Connected Successfully');
+      // Initialize GridFS after connection
+      const { initGridFS } = require('./config/gridfsConfig');
+      initGridFS();
     })
     .catch((err) => {
       console.error('MongoDB Connection Error:', err);
@@ -40,6 +43,8 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/expert', require('./routes/expertRoutes'));
 app.use('/api/expert-applications', require('./routes/expertAppRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/files', require('./routes/uploadRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');

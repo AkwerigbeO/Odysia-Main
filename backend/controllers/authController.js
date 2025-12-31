@@ -261,11 +261,46 @@ const completeExpertSignup = async (req, res, next) => {
     }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res, next) => {
+    try {
+        const allowedFields = ['name', 'bio', 'phone', 'country', 'skills', 'hourlyRate', 'avatar', 'portfolioLink', 'githubLink', 'linkedinLink'];
+        const updates = {};
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            updates,
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            res.status(404);
+            throw new Error('User not found');
+        }
+
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     getMe,
     forgotPassword,
     resetPassword,
-    completeExpertSignup
+    completeExpertSignup,
+    updateProfile
 };

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   BellIcon,
   PaperAirplaneIcon,
   UserIcon,
@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 interface NotificationItem {
-  id: number
+  id: string | number
   type: string
   message: string
   time: string
@@ -32,7 +32,8 @@ interface NavbarProps {
     avatar?: string
   }
   onLogout?: () => void
-  onNotificationClick?: (id: number) => void
+  onNotificationClick?: (id: number | string) => void
+  onMarkAllRead?: () => void
   onMessagesClick?: () => void
 }
 
@@ -43,6 +44,7 @@ export default function Navbar({
   userProfile = { name: 'User', email: 'user@example.com' },
   onLogout,
   onNotificationClick,
+  onMarkAllRead,
   onMessagesClick
 }: NavbarProps) {
   const [showNotifications, setShowNotifications] = useState(false)
@@ -51,19 +53,30 @@ export default function Navbar({
 
   const unreadNotifications = notifications.filter(n => !n.read).length
 
-  const handleNotificationClick = (notificationId: number) => {
+  const handleNotificationClick = (notificationId: number | string) => {
+    console.log('Notification clicked:', notificationId)
     if (onNotificationClick) {
       onNotificationClick(notificationId)
     }
-    setShowNotifications(false)
+    // Don't close immediately, let user read context
+    // setShowNotifications(false) 
+  }
+
+  const handleMarkAllRead = () => {
+    console.log('Mark all read clicked in Navbar')
+    if (onMarkAllRead) {
+      onMarkAllRead()
+    } else {
+      console.warn('onMarkAllRead prop is missing in Navbar')
+    }
   }
 
   const handleMessagesClick = () => {
     if (onMessagesClick) {
       onMessagesClick()
     } else {
-      const messagesPath = dashboardType === 'client' 
-        ? '/client-dashboard/messages' 
+      const messagesPath = dashboardType === 'client'
+        ? '/client-dashboard/messages'
         : '/dashboard/messages'
       router.push(messagesPath)
     }
@@ -93,9 +106,9 @@ export default function Navbar({
         whileHover={{ scale: 1.05 }}
         className="relative"
       >
-        <button 
+        <button
           onClick={() => setShowNotifications(!showNotifications)}
-          className="p-2 md:p-3 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors" 
+          className="p-2 md:p-3 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
           aria-label="Notifications"
           aria-haspopup="menu"
           aria-expanded={showNotifications}
@@ -130,7 +143,7 @@ export default function Navbar({
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
                     <button
-                      onClick={() => {/* Mark all as read */}}
+                      onClick={handleMarkAllRead}
                       className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                     >
                       Mark all as read
@@ -142,21 +155,18 @@ export default function Navbar({
                     <motion.div
                       key={notification.id}
                       whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
-                      className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors ${
-                        !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                      }`}
+                      className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        }`}
                       onClick={() => handleNotificationClick(notification.id)}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                          notification.urgent ? 'bg-red-500' : 'bg-green-500'
-                        }`} />
+                        <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${notification.urgent ? 'bg-red-500' : 'bg-green-500'
+                          }`} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm sm:text-sm font-medium ${
-                            !notification.read 
-                              ? 'text-gray-900 dark:text-white' 
-                              : 'text-gray-600 dark:text-gray-400'
-                          }`}>
+                          <p className={`text-sm sm:text-sm font-medium ${!notification.read
+                            ? 'text-gray-900 dark:text-white'
+                            : 'text-gray-600 dark:text-gray-400'
+                            }`}>
                             {notification.message}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -196,9 +206,9 @@ export default function Navbar({
         whileHover={{ scale: 1.05 }}
         className="relative"
       >
-        <button 
+        <button
           onClick={handleMessagesClick}
-          className="p-2 md:p-3 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors" 
+          className="p-2 md:p-3 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
           aria-label="Go to Messages"
         >
           <PaperAirplaneIcon className="h-5 w-5 md:h-6 md:w-6" />
@@ -215,9 +225,9 @@ export default function Navbar({
         whileHover={{ scale: 1.05 }}
         className="relative"
       >
-        <button 
+        <button
           onClick={() => setShowProfileMenu(!showProfileMenu)}
-          className="flex items-center space-x-2 p-1 md:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors" 
+          className="flex items-center space-x-2 p-1 md:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
           aria-label="User profile"
         >
           <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center">

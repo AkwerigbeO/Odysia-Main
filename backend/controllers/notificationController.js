@@ -1,58 +1,85 @@
 const Notification = require('../models/Notification');
-const Activity = require('../models/Activity');
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
 // @access  Private
-const getNotifications = async (req, res, next) => {
+exports.getNotifications = async (req, res) => {
     try {
-        const notifications = await Notification.find({ user: req.user.id }).sort({ createdAt: -1 });
-        res.status(200).json(notifications);
+        const notifications = await Notification.find({ recipient: req.user._id })
+            .sort({ createdAt: -1 })
+            .limit(50); // Limit to last 50
+
+        const unreadCount = await Notification.countDocuments({
+            recipient: req.user._id,
+            read: false
+        });
+
+        res.status(200).json({
+            success: true,
+            count: notifications.length,
+            unreadCount,
+            data: notifications
+        });
     } catch (error) {
-        next(error);
+        console.error(error);
+        res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
 
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id/read
 // @access  Private
-const markNotificationRead = async (req, res, next) => {
+exports.markAsRead = async (req, res) => {
     try {
-        const notification = await Notification.findById(req.params.id);
+        const notification = await Notification.findOne({
+            _id: req.params.id,
+            recipient: req.user._id
+        });
 
         if (!notification) {
-            res.status(404);
-            throw new Error('Notification not found');
-        }
-
-        if (notification.user.toString() !== req.user.id) {
-            res.status(401);
-            throw new Error('Not authorized');
+            return res.status(404).json({ success: false, error: 'Notification not found' });
         }
 
         notification.read = true;
         await notification.save();
 
-        res.status(200).json(notification);
+        res.status(200).json({ success: true, data: notification });
     } catch (error) {
-        next(error);
+        console.error(error);
+        res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
 
-// @desc    Get recent activity
-// @route   GET /api/notifications/activity
+// @desc    Mark all notifications as read
+// @route   PUT /api/notifications/read-all
 // @access  Private
-const getActivity = async (req, res, next) => {
+exports.markAllAsRead = async (req, res) => {
     try {
-        const activity = await Activity.find({ user: req.user.id }).sort({ createdAt: -1 }).limit(10);
-        res.status(200).json(activity);
+        console.log(`Marking all notifications read for user: ${req.user._id}`);
+        const result = await Notification.updateMany(
+            { recipient: req.user._id, read: false },
+            { read: true }
+        );
+        console.log(`Updated ${result.modifiedCount} notifications`);
+
+        res.status(200).json({ success: true, message: 'All notifications marked as read', count: result.modifiedCount });
     } catch (error) {
-        next(error);
+        console.error('Error marking all read:', error);
+        res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
 
-module.exports = {
-    getNotifications,
-    markNotificationRead,
-    getActivity
+// Internal Helper to Create Notification
+exports.createNotification = async (recipientId, type, title, message, relatedId = null) => {
+    try {
+        await Notification.create({
+            recipient: recipientId,
+            type,
+            title,
+            message,
+            relatedId
+        });
+    } catch (error) {
+        console.error('Failed to create notification:', error);
+    }
 };

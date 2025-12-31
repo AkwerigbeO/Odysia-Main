@@ -6,7 +6,8 @@ const {
     getMe,
     forgotPassword,
     resetPassword,
-    completeExpertSignup
+    completeExpertSignup,
+    updateProfile
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const {
@@ -18,6 +19,7 @@ const {
 router.post('/register', validateRequest(registerSchema), registerUser);
 router.post('/login', validateRequest(loginSchema), loginUser);
 router.get('/me', protect, getMe);
+router.put('/profile', protect, updateProfile);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
 router.post('/expert-setup', completeExpertSignup);
