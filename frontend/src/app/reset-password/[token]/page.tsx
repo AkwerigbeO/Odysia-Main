@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,8 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import { toast } from 'react-hot-toast'
 
-export default function ResetPasswordPage({ params }: { params: { token: string } }) {
+export default function ResetPasswordPage({ params }: { params: Promise<{ token: string }> }) {
+    const { token } = use(params)
     const router = useRouter()
     const { resetPassword } = useAuth()
     const [password, setPassword] = useState('')
@@ -42,7 +43,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
         setIsLoading(true)
 
         try {
-            const success = await resetPassword(password, params.token)
+            const success = await resetPassword(password, token)
             if (success) {
                 setIsSuccess(true)
                 toast.success('Password reset successfully!')

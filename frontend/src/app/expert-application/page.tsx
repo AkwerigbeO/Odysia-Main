@@ -19,6 +19,8 @@ import {
 } from '@heroicons/react/24/outline'
 import Logo from '@/components/Logo'
 import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations'
+import FileUpload from '@/components/ui/FileUpload'
+import toast from 'react-hot-toast'
 
 // Countries list (alphabetically ordered)
 const COUNTRIES = [
@@ -97,7 +99,7 @@ interface ApplicationData {
   portfolioLink: string
   linkedinLink: string
   bio: string
-  resume: File | null
+  resume: string | null
 }
 
 interface FormErrors {
@@ -146,9 +148,9 @@ export default function ExpertApplication() {
   }
 
   // Handle file upload
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-    setFormData(prev => ({ ...prev, resume: file }))
+  const handleUploadSuccess = (fileData: any) => {
+    setFormData(prev => ({ ...prev, resume: fileData.fileId }))
+    toast.success('Resume uploaded successfully!')
   }
 
   // Handle form submission
@@ -188,7 +190,8 @@ export default function ExpertApplication() {
             bio: formData.bio,
             githubLink: formData.githubLink,
             portfolioLink: formData.portfolioLink,
-            linkedinLink: formData.linkedinLink
+            linkedinLink: formData.linkedinLink,
+            resume: formData.resume
           })
         });
 
@@ -437,20 +440,23 @@ export default function ExpertApplication() {
               {/* Resume Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Resume/CV (Optional)
+                  Resume/CV *
                 </label>
                 <div className="relative">
-                  <PaperClipIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="file"
+                  <FileUpload
                     accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white dark:bg-dark-card text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    maxSize={5}
+                    label="Upload your resume (PDF, DOC, DOCX)"
+                    onUpload={handleUploadSuccess}
+                    onError={(err) => toast.error(err)}
                   />
+                  {formData.resume && (
+                    <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">
+                      <CheckCircleIcon className="h-4 w-4 mr-1" />
+                      Resume uploaded and ready
+                    </div>
+                  )}
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Accepted formats: PDF, DOC, DOCX (Max 5MB)
-                </p>
               </div>
 
               {/* Submit Button */}

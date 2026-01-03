@@ -90,8 +90,47 @@ const getProjectStats = async (req, res, next) => {
     }
 };
 
+// @desc    Submit files to a milestone
+// @route   POST /api/projects/:projectId/milestones/:milestoneId/submit
+// @access  Private (Expert only)
+const submitDeliverable = async (req, res, next) => {
+    try {
+        const { projectId, milestoneId } = req.params;
+        const { files } = req.body; // Expecting array of { originalName, fileId, mimeType }
+
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
+
+        // Check if user is the assigned expert
+        if (project.expert.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Not authorized to submit for this project' });
+        }
+
+        const milestone = project.milestones.id(milestoneId);
+        if (!milestone) {
+            return res.status(404).json({ success: false, error: 'Milestone not found' });
+        }
+
+        // Add files to milestone
+        milestone.files = milestone.files.concat(files);
+        milestone.status = 'completed'; // Mark as completed (or 'pending_review' if you have that status)
+
+        await project.save();
+
+        res.status(200).json({
+            success: true,
+            data: project
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getProjects,
     createProject,
-    getProjectStats
+    getProjectStats,
+    submitDeliverable
 };

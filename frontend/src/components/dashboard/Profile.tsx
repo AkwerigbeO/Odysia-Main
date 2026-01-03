@@ -23,7 +23,7 @@ import toast from 'react-hot-toast'
 
 export default function Profile() {
   const { formatAmount } = useCurrency()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [availability, setAvailability] = useState('available')
   const [newSkill, setNewSkill] = useState('')
@@ -33,8 +33,10 @@ export default function Profile() {
 
   // Fetch current avatar on mount
   useEffect(() => {
-    if ((user as any)?.avatar) {
-      setAvatarUrl(`/api/files/${(user as any).avatar}`)
+    if (user?.avatar) {
+      setAvatarUrl(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${user.avatar}`)
+    } else {
+      setAvatarUrl(null)
     }
   }, [user])
 
@@ -81,10 +83,7 @@ export default function Profile() {
   }
 
   const getAvatarSrc = () => {
-    if (!avatarUrl) return null
-    return avatarUrl.startsWith('/api')
-      ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${avatarUrl}`
-      : avatarUrl
+    return avatarUrl
   }
 
   return (
@@ -133,7 +132,7 @@ export default function Profile() {
                   />
                 ) : (
                   <div className="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {(user?.name || 'U').split(' ').map(n => n[0]).join('')}
+                    {(user?.name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 {isEditing && (
@@ -306,7 +305,7 @@ export default function Profile() {
                   />
                   <div className="flex items-center space-x-2">
                     <div className={`w-3 h-3 rounded-full ${status === 'available' ? 'bg-green-500' :
-                        status === 'busy' ? 'bg-orange-500' : 'bg-red-500'
+                      status === 'busy' ? 'bg-orange-500' : 'bg-red-500'
                       }`}></div>
                     <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">{status}</span>
                   </div>
@@ -371,7 +370,7 @@ export default function Profile() {
               onUpload={async (file) => {
                 try {
                   await api.put('/auth/profile', { avatar: file.fileId })
-                  setAvatarUrl(file.url)
+                  await refreshUser()
                   setShowAvatarUpload(false)
                   toast.success('Profile picture updated!')
                 } catch (error) {

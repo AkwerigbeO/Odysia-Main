@@ -123,6 +123,10 @@ exports.getFile = async (req, res) => {
 
         const file = files[0];
 
+        // Set CORS headers for cross-origin access (critical for frontend on different port)
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.set('Access-Control-Allow-Origin', '*');
+
         // Set appropriate headers
         res.set('Content-Type', file.contentType || 'application/octet-stream');
         res.set('Content-Disposition', `inline; filename="${file.metadata?.originalname || file.filename}"`);

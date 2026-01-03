@@ -10,17 +10,23 @@ import {
   PauseIcon,
   ArrowUpTrayIcon,
   EyeIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import api from '@/lib/axios'
 import { useAuth } from '@/lib/contexts/AuthContext'
+import FileUpload from '@/components/ui/FileUpload'
+import toast from 'react-hot-toast'
+import { AnimatePresence } from 'framer-motion'
 
 export default function Milestones() {
   const [selectedProject, setSelectedProject] = useState('all')
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [activeMilestone, setActiveMilestone] = useState<{ projectId: string, milestoneId: string } | null>(null)
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -69,6 +75,35 @@ export default function Milestones() {
     ? projects
     : projects.filter(p => p._id === selectedProject)
 
+  const handleFileUpload = async (project: any, milestone: any) => {
+    setActiveMilestone({ projectId: project._id, milestoneId: milestone._id })
+    setShowUploadModal(true)
+  }
+
+  const onUploadSuccess = async (fileData: any) => {
+    if (!activeMilestone) return
+
+    try {
+      await api.post(`/projects/${activeMilestone.projectId}/milestones/${activeMilestone.milestoneId}/submit`, {
+        files: [{
+          originalName: fileData.originalName,
+          fileId: fileData.fileId,
+          mimeType: fileData.mimeType
+        }]
+      })
+
+      toast.success('Files submitted successfully!')
+      setShowUploadModal(false)
+
+      // Refresh projects to show new files
+      const { data } = await api.get('/projects')
+      setProjects(data.data)
+    } catch (error) {
+      console.error('Failed to submit deliverable:', error)
+      toast.error('Failed to submit files')
+    }
+  }
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -93,8 +128,8 @@ export default function Milestones() {
         <button
           onClick={() => setSelectedProject('all')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedProject === 'all'
-              ? 'bg-primary-600 dark:bg-primary-500 text-white'
-              : 'bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-card'
+            ? 'bg-primary-600 dark:bg-primary-500 text-white'
+            : 'bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-card'
             }`}
         >
           All Projects
@@ -104,8 +139,8 @@ export default function Milestones() {
             key={project._id}
             onClick={() => setSelectedProject(project._id)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedProject === project._id
-                ? 'bg-primary-600 dark:bg-primary-500 text-white'
-                : 'bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-card'
+              ? 'bg-primary-600 dark:bg-primary-500 text-white'
+              : 'bg-gray-100 dark:bg-dark-surface text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-card'
               }`}
           >
             {project.title}
@@ -180,29 +215,44 @@ export default function Milestones() {
                         <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                           Submitted Files
                         </h4>
-                        <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 p-1 rounded">
-                          + Add Files
-                        </button>
+                        {user?.role === 'expert' && milestone.status !== 'paid' && (
+                          <button
+                            onClick={() => handleFileUpload(project, milestone)}
+                            className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 p-1 rounded"
+                          >
+                            + Add Files
+                          </button>
+                        )}
                       </div>
 
                       {milestone.files && milestone.files.length > 0 ? (
                         <div className="space-y-2">
-                          {milestone.files.map((file: string, fileIndex: number) => (
-                            <div key={fileIndex} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-surface rounded-lg">
-                              <div className="flex items-center space-x-2 min-w-0 flex-1">
-                                <DocumentIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                                <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{file}</span>
+                          {milestone.files.map((file: any, fileIndex: number) => {
+                            const fileUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${file.fileId}`
+                            return (
+                              <div key={fileIndex} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-surface rounded-lg">
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <DocumentIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{file.originalName}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
+                                  <button
+                                    onClick={() => window.open(fileUrl, '_blank')}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm mobile-touch-target focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 p-1 rounded"
+                                  >
+                                    <EyeIcon className="h-4 w-4" />
+                                  </button>
+                                  <a
+                                    href={fileUrl}
+                                    download={file.originalName}
+                                    className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm mobile-touch-target focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 p-1 rounded"
+                                  >
+                                    <ArrowUpTrayIcon className="h-4 w-4" />
+                                  </a>
+                                </div>
                               </div>
-                              <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
-                                <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm mobile-touch-target focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 p-1 rounded">
-                                  <EyeIcon className="h-4 w-4" />
-                                </button>
-                                <button className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-sm mobile-touch-target focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 p-1 rounded">
-                                  <ArrowUpTrayIcon className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       ) : (
                         <div className="text-center py-6 border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg">
@@ -221,6 +271,38 @@ export default function Milestones() {
           </div>
         ))}
       </motion.div>
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-xl"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Submit Milestone Deliverables</h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <FileUpload
+                accept="*"
+                maxSize={20}
+                label="Select or drag files to submit"
+                onUpload={onUploadSuccess}
+                onError={(error) => toast.error(error)}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

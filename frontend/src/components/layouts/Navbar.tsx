@@ -230,11 +230,17 @@ export default function Navbar({
           className="flex items-center space-x-2 p-1 md:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-colors"
           aria-label="User profile"
         >
-          <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 md:w-9 md:h-9 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center overflow-hidden">
             {userProfile.avatar ? (
-              <img src={userProfile.avatar} alt={userProfile.name} className="w-7 h-7 md:w-8 md:h-8 rounded-full" />
+              <img
+                src={userProfile.avatar.startsWith('/api') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${userProfile.avatar}` : userProfile.avatar}
+                alt={userProfile.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <UserIcon className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              <span className="text-white text-xs md:text-sm font-bold">
+                {userProfile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </span>
             )}
           </div>
           <span className="hidden md:block text-sm font-medium">{userProfile.name}</span>

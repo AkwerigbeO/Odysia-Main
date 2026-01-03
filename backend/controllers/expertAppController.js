@@ -7,7 +7,8 @@ const submitApplication = async (req, res, next) => {
     try {
         const {
             fullName, email, phone, country,
-            skills, bio, portfolioLink, githubLink, linkedinLink
+            skills, bio, portfolioLink, githubLink, linkedinLink,
+            resume
         } = req.body;
 
         // Check if pending application already exists
@@ -26,7 +27,8 @@ const submitApplication = async (req, res, next) => {
             bio,
             portfolioLink,
             githubLink,
-            linkedinLink
+            linkedinLink,
+            resume
         });
 
         res.status(201).json({

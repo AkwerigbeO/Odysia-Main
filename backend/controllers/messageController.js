@@ -113,12 +113,13 @@ exports.getMessages = async (req, res) => {
 // @access  Private
 exports.sendMessage = async (req, res) => {
     try {
-        const { recipientId, content } = req.body;
+        const { recipientId, content, attachments } = req.body;
 
         const newMessage = await Message.create({
             sender: req.user._id,
             recipient: recipientId,
-            content
+            content,
+            attachments: attachments || []
         });
 
         res.status(201).json({

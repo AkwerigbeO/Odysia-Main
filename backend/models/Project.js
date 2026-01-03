@@ -43,7 +43,13 @@ const projectSchema = new mongoose.Schema({
             enum: ['pending', 'in_progress', 'completed', 'paid'],
             default: 'pending'
         },
-        dueDate: Date
+        dueDate: Date,
+        files: [{
+            originalName: String,
+            fileId: String,
+            mimeType: String,
+            uploadDate: { type: Date, default: Date.now }
+        }]
     }],
     startDate: Date,
     completionDate: Date

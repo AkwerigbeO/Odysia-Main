@@ -9,6 +9,13 @@ interface User {
   name: string
   email: string
   role: string
+  avatar?: string
+  country?: string
+  hourlyRate?: number
+  bio?: string
+  skills?: string[]
+  companyName?: string
+  phone?: string
 }
 
 export interface RegistrationData {
@@ -27,6 +34,7 @@ export interface RegistrationData {
   bio?: string
   title?: string
   hourlyRate?: number
+  avatar?: string
   portfolioLink?: string
   githubLink?: string
   linkedinLink?: string
@@ -41,6 +49,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<boolean>
   resetPassword: (password: string, token: string) => Promise<boolean>
   logout: () => void
+  refreshUser: () => Promise<void>
   loading: boolean
   isAuthenticated: boolean
 }
@@ -80,12 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.post('/auth/login', { email, password })
       localStorage.setItem('token', data.token)
       setToken(data.token)
-      const userData = {
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role || 'user',
-      }
+
+      // Fetch full user data after login to get all fields
+      const { data: userData } = await api.get('/auth/me')
       setUser(userData)
       return userData
     } catch (error) {
@@ -99,12 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.post('/auth/register', userData)
       localStorage.setItem('token', data.token)
       setToken(data.token)
-      setUser({
-        _id: data._id,
-        name: data.name,
-        email: data.email,
-        role: data.role || 'user',
-      })
+
+      // Fetch full user data after register
+      const { data: fullUserData } = await api.get('/auth/me')
+      setUser(fullUserData)
       return true
     } catch (error) {
       console.error('Registration failed', error)
@@ -127,12 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.put(`/auth/resetpassword/${token}`, { password })
       localStorage.setItem('token', data.token)
       setToken(data.token)
-      // loadUser could be called here to refresh user data if needed
+      await loadUser()
       return true
     } catch (error) {
       console.error('Reset password failed', error)
       return false
     }
+  }
+
+  const refreshUser = async () => {
+    await loadUser()
   }
 
   const logout = () => {
@@ -151,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       forgotPassword,
       resetPassword,
       logout,
+      refreshUser,
       loading,
       isAuthenticated: !!user
     }}>

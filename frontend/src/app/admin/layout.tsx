@@ -59,8 +59,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     key={item.name}
                                     href={item.href}
                                     className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${isActive
-                                            ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400'
-                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white'
+                                        ? 'bg-primary-50 dark:bg-primary-900/10 text-primary-600 dark:text-primary-400'
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-card hover:text-gray-900 dark:hover:text-white'
                                         }`}
                                 >
                                     <item.icon className="h-5 w-5" />
@@ -73,12 +73,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {/* User Profile & Logout */}
                     <div className="p-4 border-t border-gray-200 dark:border-dark-border">
                         <div className="flex items-center mb-4 px-2">
-                            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold">
-                                {user?.name?.[0] || 'A'}
+                            <div className="w-9 h-9 md:w-10 md:h-10 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center overflow-hidden">
+                                {user?.avatar ? (
+                                    <img
+                                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${user.avatar}`}
+                                        alt={user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-white text-sm md:text-base font-bold">
+                                        {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'A'}
+                                    </span>
+                                )}
                             </div>
                             <div className="ml-3">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[140px]">{user?.email}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{user?.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{user?.email}</p>
                             </div>
                         </div>
                         <button

@@ -103,7 +103,7 @@ export default function ClientDashboardWrapper({ children }: ClientDashboardWrap
   const userProfile = {
     name: user?.name || 'Client',
     email: user?.email || '',
-    avatar: '' // Add avatar if available in user object later
+    avatar: user?.avatar ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${user.avatar}` : undefined
   }
 
   const handleLogout = () => {
@@ -111,7 +111,7 @@ export default function ClientDashboardWrapper({ children }: ClientDashboardWrap
     // router.push('/') // logout already handles redirect
   }
 
-  const handleNotificationClick = async (notificationId: number) => {
+  const handleNotificationClick = async (notificationId: string | number) => {
     try {
       await api.put(`/notifications/${notificationId}/read`)
       // Optimistic update

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -19,7 +19,8 @@ interface Event {
     capacity: number
 }
 
-export default function EventDetailsPage({ params }: { params: { id: string } }) {
+export default function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const [event, setEvent] = useState<Event | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -28,7 +29,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     useEffect(() => {
         const fetchEvent = async () => {
             try {
-                const { data } = await api.get(`/events/${params.id}`)
+                const { data } = await api.get(`/events/${id}`)
                 setEvent(data)
             } catch (err) {
                 console.error('Failed to fetch event', err)
@@ -39,7 +40,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         }
 
         fetchEvent()
-    }, [params.id])
+    }, [id])
 
     if (loading) {
         return (

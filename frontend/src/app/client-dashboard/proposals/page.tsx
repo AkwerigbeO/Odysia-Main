@@ -26,7 +26,25 @@ export default function ClientProposalsPage() {
   const { formatAmount } = useCurrency()
 
   // Real empty state - no backend for proposals yet
-  const proposals: any[] = []
+  const proposals = [
+    {
+      id: 1,
+      project: "Mobile App Development",
+      status: "pending",
+      description: "Interested in your mobile app project. I have extensive experience in React Native.",
+      budget: "$5,000",
+      timeline: "4 weeks",
+      submittedDate: "Oct 12, 2024",
+      expert: {
+        name: "John Doe",
+        avatar: "JD",
+        rating: 4.8,
+        reviews: 12,
+        skills: ["React Native", "Firebase", "TypeScript"]
+      },
+      portfolio: "#"
+    }
+  ]
 
   const filteredProposals = proposals.filter(proposal => {
     const matchesFilter = filter === 'all' || proposal.status === filter
@@ -137,8 +155,8 @@ export default function ClientProposalsPage() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'grid'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 style={{
                   minHeight: '32px',
@@ -152,8 +170,8 @@ export default function ClientProposalsPage() {
               <button
                 onClick={() => setViewMode('list')}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 style={{
                   minHeight: '32px',

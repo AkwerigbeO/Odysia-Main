@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -19,7 +19,8 @@ interface Event {
     location: string
 }
 
-export default function RegisterEventPage({ params }: { params: { id: string } }) {
+export default function RegisterEventPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
     const router = useRouter()
     const { user, loading: authLoading } = useAuth()
     const [event, setEvent] = useState<Event | null>(null)
@@ -31,13 +32,13 @@ export default function RegisterEventPage({ params }: { params: { id: string } }
     useEffect(() => {
         // Redirect if not logged in
         if (!authLoading && !user) {
-            router.push(`/client-login?redirect=/events/${params.id}/register`);
+            router.push(`/client-login?redirect=/events/${id}/register`);
             return;
         }
 
         const fetchEvent = async () => {
             try {
-                const { data } = await api.get(`/events/${params.id}`)
+                const { data } = await api.get(`/events/${id}`)
                 setEvent(data)
             } catch (err) {
                 console.error('Failed to fetch event', err)
@@ -50,14 +51,14 @@ export default function RegisterEventPage({ params }: { params: { id: string } }
         if (user) {
             fetchEvent()
         }
-    }, [params.id, user, authLoading, router])
+    }, [id, user, authLoading, router])
 
     const handleRegister = async () => {
         setRegistering(true)
         setError('')
 
         try {
-            await api.post(`/events/${params.id}/register`)
+            await api.post(`/events/${id}/register`)
             setIsSuccess(true)
         } catch (err: any) {
             console.error('Registration failed', err)
@@ -119,7 +120,7 @@ export default function RegisterEventPage({ params }: { params: { id: string } }
                             </div>
                         ) : (
                             <div className="p-8 md:p-10">
-                                <Link href={`/events/${params.id}`} className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-6">
+                                <Link href={`/events/${id}`} className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-6">
                                     <ArrowLeftIcon className="h-4 w-4 mr-2" />
                                     Cancel and go back
                                 </Link>

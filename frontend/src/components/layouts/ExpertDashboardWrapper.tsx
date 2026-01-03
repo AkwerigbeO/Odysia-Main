@@ -101,7 +101,7 @@ export default function ExpertDashboardWrapper({ children }: { children: React.R
   const userProfile = {
     name: user?.name || 'Expert',
     email: user?.email || '',
-    avatar: user?.name?.charAt(0) || 'E'
+    avatar: user?.avatar ? `/api/files/${user.avatar}` : undefined
   }
 
   const handleLogout = () => {

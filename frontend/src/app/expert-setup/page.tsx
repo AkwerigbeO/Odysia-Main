@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -8,7 +8,7 @@ import { LockClosedIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/2
 import Logo from '@/components/Logo'
 import api from '@/lib/axios'
 
-export default function ExpertSetup() {
+function ExpertSetupContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { login } = useAuth() // We might use this or just rely on the token returned
@@ -163,5 +163,17 @@ export default function ExpertSetup() {
                 </form>
             </motion.div>
         </div>
+    )
+}
+
+export default function ExpertSetup() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            </div>
+        }>
+            <ExpertSetupContent />
+        </Suspense>
     )
 }

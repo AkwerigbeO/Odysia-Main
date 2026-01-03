@@ -12,11 +12,16 @@ import {
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   PlusIcon,
-  EllipsisVerticalIcon
+  EllipsisVerticalIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations'
 import api from '@/lib/axios'
 import { useAuth } from '@/lib/contexts/AuthContext'
+import FileUpload from '@/components/ui/FileUpload'
+import toast from 'react-hot-toast'
+import ImagePreview from '@/components/ui/ImagePreview'
+import { AnimatePresence } from 'framer-motion'
 
 export default function Messages() {
   const [selectedChat, setSelectedChat] = useState<string | null>(null)
@@ -29,6 +34,8 @@ export default function Messages() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false)
+  const [pendingAttachments, setPendingAttachments] = useState<any[]>([])
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -94,16 +101,24 @@ export default function Messages() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    if (message.trim() && selectedChat) {
+    if ((message.trim() || pendingAttachments.length > 0) && selectedChat) {
       try {
         const { data } = await api.post('/messages', {
           recipientId: selectedChat,
-          content: message
+          content: message,
+          attachments: pendingAttachments.map(ext => ({
+            originalName: ext.originalName,
+            filename: ext.fileId,
+            path: `/api/files/${ext.fileId}`,
+            mimeType: ext.mimeType || 'application/octet-stream'
+          }))
         })
         setActiveMessages([...activeMessages, data.data])
         setMessage('')
+        setPendingAttachments([])
       } catch (error) {
         console.error('Failed to send message:', error)
+        toast.error('Failed to send message')
       }
     }
   }
@@ -264,10 +279,48 @@ export default function Messages() {
                   className={`flex w-full max-w-full ${msg.sender === user?._id ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-[90%] sm:max-w-xs lg:max-w-md break-words overflow-hidden px-4 py-2 rounded-lg ${msg.sender === user?._id
-                      ? 'bg-primary-600 dark:bg-primary-500 text-white'
-                      : 'bg-gray-100 dark:bg-dark-surface text-gray-900 dark:text-white'
+                    ? 'bg-primary-600 dark:bg-primary-500 text-white'
+                    : 'bg-gray-100 dark:bg-dark-surface text-gray-900 dark:text-white'
                     }`}>
                     <p className="text-sm">{msg.content}</p>
+
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {msg.attachments.map((file: any, idx: number) => {
+                          const isImage = file.mimeType?.startsWith('image/')
+                          const fileUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${file.path}`
+
+                          return (
+                            <div key={idx} className="group relative">
+                              {isImage ? (
+                                <div className="max-w-full rounded overflow-hidden shadow-sm bg-black/5">
+                                  <img
+                                    src={fileUrl}
+                                    alt={file.originalName}
+                                    className="max-h-60 w-auto object-contain cursor-pointer transition-transform hover:scale-[1.02]"
+                                    onClick={() => window.open(fileUrl, '_blank')}
+                                  />
+                                </div>
+                              ) : (
+                                <a
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center space-x-2 p-2 rounded border transition-colors ${msg.sender === user?._id
+                                      ? 'bg-white/10 border-white/20 hover:bg-white/20'
+                                      : 'bg-black/5 border-black/10 hover:bg-black/10'
+                                    }`}
+                                >
+                                  <PaperClipIcon className="h-4 w-4 flex-shrink-0" />
+                                  <span className="text-xs truncate font-medium">{file.originalName}</span>
+                                </a>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
                     <div className={`flex items-center justify-between mt-1 text-xs ${msg.sender === user?._id ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
                       }`}>
                       <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -295,6 +348,7 @@ export default function Messages() {
               <form onSubmit={handleSendMessage} className="flex space-x-4">
                 <button
                   type="button"
+                  onClick={() => setShowAttachmentModal(true)}
                   className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 >
                   <PaperClipIcon className="h-6 w-6" />
@@ -315,6 +369,60 @@ export default function Messages() {
                   </button>
                 </div>
               </form>
+
+              {/* Pending Attachments Bar */}
+              {pendingAttachments.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2 p-2 bg-gray-50 dark:bg-dark-surface rounded-lg">
+                  {pendingAttachments.map((file, idx) => (
+                    <div key={idx} className="relative group">
+                      <div className="flex items-center space-x-2 bg-white dark:bg-dark-card pr-8 pl-2 py-1.5 rounded-md border border-gray-200 dark:border-dark-border shadow-sm">
+                        <PaperClipIcon className="h-4 w-4 text-gray-400" />
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
+                          {file.originalName}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-1.5 -right-1.5 p-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 transition-colors border border-red-200 dark:border-red-800"
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Attachment Modal */}
+              <AnimatePresence>
+                {showAttachmentModal && (
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-xl"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Attach Files</h3>
+                        <button onClick={() => setShowAttachmentModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                          <XMarkIcon className="h-6 w-6" />
+                        </button>
+                      </div>
+
+                      <FileUpload
+                        accept="*"
+                        maxSize={10}
+                        label="Attach files to your message"
+                        onUpload={(file) => {
+                          setPendingAttachments([...pendingAttachments, file])
+                          setShowAttachmentModal(false)
+                        }}
+                        onError={(error) => toast.error(error)}
+                      />
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
           </>
         ) : (

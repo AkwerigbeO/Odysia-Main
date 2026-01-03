@@ -12,26 +12,45 @@ import {
   PencilIcon,
   TrashIcon,
   IdentificationIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import { AnimatePresence } from 'framer-motion'
+import FileUpload from '@/components/ui/FileUpload'
+import toast from 'react-hot-toast'
+import api from '@/lib/axios'
 
 // Profile Section Component
 export function ProfileSection() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false)
   const [profileData, setProfileData] = useState({
     fullName: user?.name || 'Client Name',
-    companyName: 'Company Name', // Placeholder until company field added to backend
+    companyName: user?.companyName || 'Company Name',
     email: user?.email || 'email@example.com',
-    phone: '',
-    location: ''
+    phone: user?.phone || '',
+    location: user?.country || ''
   })
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    // Save profile data to backend
-    // This would typically make an API call to update the user's profile
+  const avatarUrl = user?.avatar
+    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${user.avatar}`
+    : null
+
+  const handleSave = async () => {
+    try {
+      await api.put('/auth/profile', {
+        name: profileData.fullName,
+        phone: profileData.phone,
+        country: profileData.location
+      })
+      await refreshUser()
+      toast.success('Profile updated!')
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      toast.error('Failed to update profile')
+    }
   }
 
   return (
@@ -47,10 +66,19 @@ export function ProfileSection() {
         {/* Profile Picture */}
         <div className="flex items-center space-x-6 mb-6">
           <div className="relative">
-            <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-              <UserIcon className="h-10 w-10 text-gray-400" />
+            <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center overflow-hidden">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={user?.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white text-2xl font-bold">
+                  {(user?.name || 'C').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </span>
+              )}
             </div>
-            <button className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors mobile-touch-target">
+            <button
+              onClick={() => setShowAvatarUpload(true)}
+              className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors desktop-only mobile-touch-target"
+            >
               <CameraIcon className="h-4 w-4" />
             </button>
           </div>
@@ -61,6 +89,45 @@ export function ProfileSection() {
             </p>
           </div>
         </div>
+
+        {/* Avatar Upload Modal */}
+        <AnimatePresence>
+          {showAvatarUpload && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-xl"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Update Profile Photo</h3>
+                  <button onClick={() => setShowAvatarUpload(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <FileUpload
+                  accept="image/jpeg,image/png,image/webp"
+                  maxSize={5}
+                  label="Upload your photo"
+                  onUpload={async (file) => {
+                    try {
+                      await api.put('/auth/profile', { avatar: file.fileId })
+                      await refreshUser()
+                      setShowAvatarUpload(false)
+                      toast.success('Profile picture updated!')
+                    } catch (error) {
+                      console.error('Failed to update avatar:', error)
+                      toast.error('Failed to update profile picture')
+                    }
+                  }}
+                  onError={(error) => toast.error(error)}
+                />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
