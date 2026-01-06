@@ -40,46 +40,63 @@ export default function Profile() {
     }
   }, [user])
 
-  const profile = {
-    name: 'John Expert',
-    email: 'john.expert@example.com',
-    bio: 'Experienced full-stack developer with 5+ years of expertise in React, Node.js, and modern web technologies.',
-    location: 'Lagos, Nigeria',
-    hourlyRate: formatAmount(25000),
-    skills: ['React', 'Node.js', 'TypeScript', 'Python', 'AWS', 'Docker'],
-    portfolio: [
-      {
-        id: 1,
-        title: 'E-commerce Platform',
-        description: 'Full-stack e-commerce solution with payment integration',
-        link: 'https://example.com/project1',
-        image: '/api/placeholder/300/200'
-      },
-      {
-        id: 2,
-        title: 'Mobile App Design',
-        description: 'UI/UX design for mobile application',
-        link: 'https://example.com/project2',
-        image: '/api/placeholder/300/200'
-      }
-    ],
-    badges: [
-      { name: 'Verified', icon: ShieldCheckIcon, color: 'bg-blue-500' },
-      { name: 'Top Rated', icon: StarIcon, color: 'bg-yellow-500' },
-      { name: 'Available', icon: CheckIcon, color: 'bg-green-500' }
-    ]
+  // State for form fields
+  const [formData, setFormData] = useState({
+    bio: '',
+    location: '',
+    hourlyRate: '',
+    skills: [] as string[],
+    portfolioLink: '',
+    githubLink: '',
+    linkedinLink: ''
+  })
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        bio: user.bio || '',
+        location: user.country || '',
+        hourlyRate: user.hourlyRate?.toString() || '',
+        skills: user.skills || [],
+        portfolioLink: user.portfolioLink || '',
+        githubLink: user.githubLink || '',
+        linkedinLink: user.linkedinLink || ''
+      })
+    }
+  }, [user])
+
+  const handleSave = async () => {
+    try {
+      await api.put('/auth/profile', {
+        bio: formData.bio,
+        country: formData.location,
+        hourlyRate: Number(formData.hourlyRate),
+        skills: formData.skills,
+        portfolioLink: formData.portfolioLink,
+        githubLink: formData.githubLink,
+        linkedinLink: formData.linkedinLink
+      })
+      await refreshUser()
+      setIsEditing(false)
+      toast.success('Profile updated successfully')
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      toast.error('Failed to update profile')
+    }
   }
 
   const handleAddSkill = () => {
-    if (newSkill.trim() && !profile.skills.includes(newSkill)) {
+    if (newSkill.trim() && !formData.skills.includes(newSkill)) {
+      setFormData(prev => ({ ...prev, skills: [...prev.skills, newSkill] }))
       setNewSkill('')
     }
   }
 
-  const handleAddPortfolioItem = () => {
-    if (newPortfolioItem.title && newPortfolioItem.link) {
-      setNewPortfolioItem({ title: '', link: '', description: '' })
-    }
+  const removeSkill = (skillToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill !== skillToRemove)
+    }))
   }
 
   const getAvatarSrc = () => {
@@ -108,10 +125,16 @@ export default function Profile() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              if (isEditing) {
+                handleSave()
+              } else {
+                setIsEditing(true)
+              }
+            }}
             className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium"
           >
-            <PencilIcon className="h-4 w-4" />
+            {isEditing ? <CheckIcon className="h-4 w-4" /> : <PencilIcon className="h-4 w-4" />}
             <span>{isEditing ? 'Save Changes' : 'Edit Profile'}</span>
           </motion.button>
         </div>
@@ -150,29 +173,47 @@ export default function Profile() {
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-4">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {user?.name || profile.name}
+                    {user?.name || 'Expert Name'}
                   </h2>
-                  <div className="flex items-center space-x-2">
-                    {profile.badges.map((badge) => (
-                      <div key={badge.name} className={`${badge.color} p-1 rounded-full`}>
-                        <badge.icon className="h-4 w-4 text-white" />
-                      </div>
-                    ))}
-                  </div>
+                  {user?.verified && (
+                    <div className="bg-blue-500 p-1 rounded-full" title="Verified Expert">
+                      <ShieldCheckIcon className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
                     <UserIcon className="h-4 w-4" />
-                    <span>{user?.email || profile.email}</span>
+                    <span>{user?.email}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
                     <GlobeAltIcon className="h-4 w-4" />
-                    <span>{profile.location}</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        className="px-2 py-1 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded text-sm"
+                        placeholder="Location (Country)"
+                      />
+                    ) : (
+                      <span>{formData.location || 'Location not set'}</span>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
                     <CurrencyDollarIcon className="h-4 w-4" />
-                    <span>{profile.hourlyRate}/hour</span>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={formData.hourlyRate}
+                        onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                        className="px-2 py-1 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded text-sm w-24"
+                        placeholder="Rate"
+                      />
+                    ) : (
+                      <span>{formatAmount(Number(formData.hourlyRate) || 0)}/hour</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -186,13 +227,14 @@ export default function Profile() {
             </h3>
             {isEditing ? (
               <textarea
-                defaultValue={profile.bio}
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 className="w-full h-32 px-3 py-2 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-lg text-sm resize-none"
                 placeholder="Tell us about yourself..."
               />
             ) : (
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                {profile.bio}
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                {formData.bio || 'No bio provided.'}
               </p>
             )}
           </div>
@@ -201,24 +243,25 @@ export default function Profile() {
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Skills</h3>
-              {isEditing && (
-                <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-                  + Add Skill
-                </button>
-              )}
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {profile.skills.map((skill) => (
+              {formData.skills.map((skill) => (
                 <div key={skill} className="flex items-center space-x-2 bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full text-sm">
                   <span>{skill}</span>
                   {isEditing && (
-                    <button className="text-primary-500 hover:text-primary-700">
+                    <button
+                      onClick={() => removeSkill(skill)}
+                      className="text-primary-500 hover:text-primary-700"
+                    >
                       <XMarkIcon className="h-3 w-3" />
                     </button>
                   )}
                 </div>
               ))}
+              {formData.skills.length === 0 && !isEditing && (
+                <p className="text-gray-500 text-sm italic">No skills listed.</p>
+              )}
             </div>
 
             {isEditing && (
@@ -242,47 +285,66 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Portfolio */}
+          {/* Portfolio / Links */}
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Portfolio</h3>
-              {isEditing && (
-                <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-                  + Add Project
-                </button>
-              )}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Professional Links</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profile.portfolio.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={fadeInUp}
-                  initial="hidden"
-                  animate="visible"
-                  className="border border-gray-200 dark:border-dark-border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                >
-                  <div className="h-32 bg-gray-100 dark:bg-dark-surface flex items-center justify-center">
-                    <LinkIcon className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                      {item.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {item.description}
-                    </p>
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                    >
-                      View Project →
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Portfolio Website</label>
+                  {isEditing ? (
+                    <input
+                      type="url"
+                      value={formData.portfolioLink}
+                      onChange={(e) => setFormData({ ...formData, portfolioLink: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-lg text-sm"
+                      placeholder="https://..."
+                    />
+                  ) : (
+                    <a href={formData.portfolioLink || '#'} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 ${formData.portfolioLink ? 'text-primary-600 hover:underline' : 'text-gray-400 pointer-events-none'}`}>
+                      <GlobeAltIcon className="h-5 w-5" />
+                      <span>{formData.portfolioLink || 'No link added'}</span>
                     </a>
-                  </div>
-                </motion.div>
-              ))}
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub Profile</label>
+                  {isEditing ? (
+                    <input
+                      type="url"
+                      value={formData.githubLink}
+                      onChange={(e) => setFormData({ ...formData, githubLink: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-lg text-sm"
+                      placeholder="https://github.com/..."
+                    />
+                  ) : (
+                    <a href={formData.githubLink || '#'} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 ${formData.githubLink ? 'text-primary-600 hover:underline' : 'text-gray-400 pointer-events-none'}`}>
+                      <LinkIcon className="h-5 w-5" />
+                      <span>{formData.githubLink || 'No link added'}</span>
+                    </a>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">LinkedIn Profile</label>
+                  {isEditing ? (
+                    <input
+                      type="url"
+                      value={formData.linkedinLink}
+                      onChange={(e) => setFormData({ ...formData, linkedinLink: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-dark-surface border border-gray-300 dark:border-dark-border rounded-lg text-sm"
+                      placeholder="https://linkedin.com/in/..."
+                    />
+                  ) : (
+                    <a href={formData.linkedinLink || '#'} target="_blank" rel="noopener noreferrer" className={`flex items-center space-x-2 ${formData.linkedinLink ? 'text-primary-600 hover:underline' : 'text-gray-400 pointer-events-none'}`}>
+                      <LinkIcon className="h-5 w-5" />
+                      <span>{formData.linkedinLink || 'No link added'}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -314,30 +376,14 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Badges */}
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Badges & Achievements</h3>
-            <div className="space-y-3">
-              {profile.badges.map((badge) => (
-                <div key={badge.name} className="flex items-center space-x-3">
-                  <div className={`${badge.color} p-2 rounded-lg`}>
-                    <badge.icon className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{badge.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Stats */}
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Stats</h3>
             <div className="space-y-4">
               {[
-                { label: 'Projects Completed', value: '24' },
-                { label: 'Client Satisfaction', value: '98%' },
-                { label: 'On-Time Delivery', value: '100%' },
-                { label: 'Response Time', value: '2 hours' }
+                { label: 'Client Rating', value: `${user?.rating || 0}/5.0` },
+                { label: 'Active Chats', value: user?.activeChats || 0 },
+                { label: 'Pending Actions', value: user?.pendingActions || 0 }
               ].map((stat) => (
                 <div key={stat.label} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</span>

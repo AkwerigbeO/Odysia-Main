@@ -9,6 +9,9 @@ const {
     getFileInfo
 } = require('../controllers/uploadController');
 
+// Public upload route (for expert applications, etc.)
+router.post('/public', upload.single('file'), uploadFile);
+
 // Upload routes (protected)
 router.post('/', protect, upload.single('file'), uploadFile);
 

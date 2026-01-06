@@ -82,7 +82,10 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={`${inter.className} transition-colors duration-300 bg-white dark:bg-black text-gray-900 dark:text-white antialiased`}>
+      <body
+        className={`${inter.className} transition-colors duration-300 bg-white dark:bg-black text-gray-900 dark:text-white antialiased`}
+        suppressHydrationWarning={true}
+      >
         <ThemeProvider>
           <CurrencyProvider>
             <AuthProvider>

@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
-import { 
-  HomeIcon, 
-  FolderIcon, 
-  ChatBubbleLeftRightIcon, 
-  CurrencyDollarIcon, 
-  UserIcon, 
-  QuestionMarkCircleIcon, 
+import {
+  HomeIcon,
+  FolderIcon,
+  ChatBubbleLeftRightIcon,
+  CurrencyDollarIcon,
+  UserIcon,
+  QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
   BellIcon,
   PaperAirplaneIcon,
@@ -48,18 +48,18 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
   const [messages, setMessages] = useState(2)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  
+
   // Determine active section based on current pathname
-  const currentActiveSection = pathname === '/dashboard' ? 'dashboard' : 
-                              pathname.includes('/projects') ? 'projects' :
-                              pathname.includes('/milestones') ? 'milestones' :
-                              pathname.includes('/messages') ? 'messages' :
-                              pathname.includes('/earnings') ? 'earnings' :
-                              pathname.includes('/profile') ? 'profile' :
-                              pathname.includes('/support') ? 'support' : 'dashboard'
+  const currentActiveSection = pathname === '/dashboard' ? 'dashboard' :
+    pathname.includes('/projects') ? 'projects' :
+      pathname.includes('/milestones') ? 'milestones' :
+        pathname.includes('/messages') ? 'messages' :
+          pathname.includes('/earnings') ? 'earnings' :
+            pathname.includes('/profile') ? 'profile' :
+              pathname.includes('/support') ? 'support' : 'dashboard'
 
   // Sample notifications data
   const recentNotifications = [
@@ -125,7 +125,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
   return (
     <div className="min-h-screen bg-white dark:bg-dark-bg">
       {/* Top Navigation Bar */}
-      <motion.nav 
+      <motion.nav
         className="bg-white dark:bg-dark-surface shadow-lg sticky top-0 z-50 transition-colors duration-300"
         variants={fadeInDown}
         initial="hidden"
@@ -147,8 +147,8 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                   <Bars3Icon className="h-6 w-6" />
                 )}
               </motion.button>
-              
-              <motion.div 
+
+              <motion.div
                 className="flex-shrink-0"
                 whileHover={{ scale: 1.05 }}
               >
@@ -162,7 +162,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
             </div>
 
             {/* Right side icons - moved to left side */}
-            <motion.div 
+            <motion.div
               className="flex items-center space-x-2 sm:space-x-4"
               variants={staggerContainer}
               initial="hidden"
@@ -174,9 +174,9 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                 whileHover={{ scale: 1.05 }}
                 className="relative"
               >
-                <button 
+                <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" 
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   aria-label="Notifications"
                   aria-haspopup="menu"
                   aria-expanded={showNotifications}
@@ -202,7 +202,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       />
                       <motion.div
                         className="sm:absolute sm:right-0 sm:mt-2 fixed top-16 left-4 right-4 sm:inset-x-auto w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] sm:max-w-none bg-white dark:bg-dark-card rounded-xl sm:rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-50"
-                        style={{ 
+                        style={{
                           WebkitOverflowScrolling: 'touch'
                         }}
                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -226,21 +226,18 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                             <motion.div
                               key={notification.id}
                               whileHover={{ backgroundColor: 'rgba(147, 51, 234, 0.05)' }}
-                              className={`p-4 border-b border-gray-100 dark:border-dark-border cursor-pointer transition-colors ${
-                                !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                              }`}
+                              className={`p-4 border-b border-gray-100 dark:border-dark-border cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                                }`}
                               onClick={() => handleNotificationClick(notification.id)}
                             >
                               <div className="flex items-start space-x-3">
-                                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                                  notification.urgent ? 'bg-red-500' : 'bg-green-500'
-                                }`} />
+                                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${notification.urgent ? 'bg-red-500' : 'bg-green-500'
+                                  }`} />
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm sm:text-sm font-medium ${
-                                    !notification.read 
-                                      ? 'text-gray-900 dark:text-white' 
-                                      : 'text-gray-600 dark:text-gray-400'
-                                  }`}>
+                                  <p className={`text-sm sm:text-sm font-medium ${!notification.read
+                                    ? 'text-gray-900 dark:text-white'
+                                    : 'text-gray-600 dark:text-gray-400'
+                                    }`}>
                                     {notification.message}
                                   </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -275,9 +272,9 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                 whileHover={{ scale: 1.05 }}
                 className="relative"
               >
-                <button 
+                <button
                   onClick={handleMessagesClick}
-                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" 
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   aria-label="Go to Projects"
                 >
                   <PaperAirplaneIcon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -295,15 +292,23 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                 whileHover={{ scale: 1.05 }}
                 className="relative"
               >
-                <button 
+                <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" 
-                  aria-label="Expert profile"
+                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-card transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  aria-label="User profile"
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary-600 dark:bg-primary-500 rounded-full flex items-center justify-center overflow-hidden">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar.startsWith('/api') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${user.avatar}` : user.avatar}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    )}
                   </div>
-                  <span className="hidden sm:block text-sm font-medium">John Expert</span>
+                  <span className="hidden sm:block text-sm font-medium">{user?.name || 'User'}</span>
                 </button>
 
                 {/* Profile Menu Dropdown */}
@@ -319,7 +324,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       />
                       <motion.div
                         className="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-48 max-w-[calc(100vw-2rem)] sm:max-w-none bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border z-50"
-                        style={{ 
+                        style={{
                           left: 'auto',
                           right: '1rem',
                           transform: 'translateX(0)'
@@ -331,8 +336,8 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       >
                         <div className="py-2">
                           <div className="px-4 py-3 border-b border-gray-200 dark:border-dark-border">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">John Expert</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">expert@odysia.com</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                           </div>
                           <div className="py-1">
                             <Link
@@ -372,7 +377,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
 
       <div className="flex">
         {/* Sidebar Navigation - Desktop */}
-        <motion.aside 
+        <motion.aside
           className="hidden lg:block w-64 bg-white dark:bg-dark-surface shadow-lg min-h-screen"
           variants={fadeInDown}
           initial="hidden"
@@ -388,25 +393,24 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                 >
                   <Link
                     href={item.href}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                      currentActiveSection === item.id
-                        ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary-600 dark:hover:text-primary-400'
-                    }`}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${currentActiveSection === item.id
+                      ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary-600 dark:hover:text-primary-400'
+                      }`}
                   >
                     <item.icon className="h-5 w-5" />
                     <span>{item.label}</span>
                   </Link>
                 </motion.div>
               ))}
-              
+
               {/* Logout */}
               <motion.div
                 variants={staggerItem}
                 whileHover={{ x: 5 }}
                 className="pt-4 border-t border-gray-200 dark:border-dark-border"
               >
-                <button 
+                <button
                   onClick={logout}
                   className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full mobile-touch-target focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                   aria-label="Logout"
@@ -453,7 +457,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
-                  
+
                   <nav className="space-y-2">
                     {sidebarItems.map((item, index) => (
                       <motion.div
@@ -465,11 +469,10 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       >
                         <Link
                           href={item.href}
-                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                            currentActiveSection === item.id
-                              ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary-600 dark:hover:text-primary-400'
-                          }`}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors mobile-touch-target focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${currentActiveSection === item.id
+                            ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary-600 dark:hover:text-primary-400'
+                            }`}
                           onClick={() => setIsSidebarOpen(false)}
                         >
                           <item.icon className="h-5 w-5" />
@@ -477,7 +480,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                         </Link>
                       </motion.div>
                     ))}
-                    
+
                     {/* Logout */}
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
@@ -486,7 +489,7 @@ export default function DashboardLayout({ children, activeSection = 'dashboard' 
                       whileHover={{ x: 5 }}
                       className="pt-4 border-t border-gray-200 dark:border-dark-border"
                     >
-                      <button 
+                      <button
                         onClick={logout}
                         className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full mobile-touch-target focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                         aria-label="Logout"

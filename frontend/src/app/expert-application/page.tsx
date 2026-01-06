@@ -449,6 +449,7 @@ export default function ExpertApplication() {
                     label="Upload your resume (PDF, DOC, DOCX)"
                     onUpload={handleUploadSuccess}
                     onError={(err) => toast.error(err)}
+                    uploadUrl="/upload/public"
                   />
                   {formData.resume && (
                     <div className="mt-2 flex items-center text-sm text-green-600 dark:text-green-400">

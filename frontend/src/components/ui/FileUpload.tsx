@@ -12,6 +12,7 @@ interface FileUploadProps {
     multiple?: boolean
     className?: string
     label?: string
+    uploadUrl?: string
 }
 
 export default function FileUpload({
@@ -21,7 +22,8 @@ export default function FileUpload({
     onError,
     multiple = false,
     className = '',
-    label = 'Upload a file'
+    label = 'Upload a file',
+    uploadUrl = '/upload'
 }: FileUploadProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -72,7 +74,7 @@ export default function FileUpload({
             const formData = new FormData()
             formData.append('file', file)
 
-            const { data } = await api.post('/upload', formData, {
+            const { data } = await api.post(uploadUrl, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 },

@@ -36,12 +36,17 @@ function ExpertLoginContent() {
 
     try {
       const user = await login(email, password)
+      console.log('[ExpertLogin Debug] User after login:', user)
       if (user) {
+        console.log('[ExpertLogin Debug] User role:', user.role)
         if (user.role === 'expert') {
+          console.log('[ExpertLogin Debug] Redirecting to /dashboard')
           router.push('/dashboard')
         } else if (user.role === 'client') {
+          console.log('[ExpertLogin Debug] Redirecting to /client-dashboard')
           router.replace('/client-dashboard')
         } else {
+          console.log('[ExpertLogin Debug] Unknown role, redirecting to /')
           router.push('/')
         }
       } else {
