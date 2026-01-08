@@ -126,8 +126,28 @@ const getEarnings = async (req, res, next) => {
     }
 };
 
+// @desc    Get all experts (Admin only)
+// @route   GET /api/expert/admin/all
+// @access  Private (Admin)
+const getAllExperts = async (req, res, next) => {
+    try {
+        const experts = await User.find({ role: 'expert' })
+            .select('-password')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: experts.length,
+            data: experts
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardStats,
     getRecentActivity,
-    getEarnings
+    getEarnings,
+    getAllExperts
 };

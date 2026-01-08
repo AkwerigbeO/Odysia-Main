@@ -1,21 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 const {
     getDashboardStats,
     getRecentActivity,
-    getEarnings
+    getEarnings,
+    getAllExperts
 } = require('../controllers/expertController');
 
-// All routes are protected and for experts
+// All routes are protected
 router.use(protect);
-// Add role check middleware here if strict 'expert' role check needed, 
-// strictly speaking 'protect' just checks valid token. 
-// Can add a middleware like `restrictTo('expert')`
 
+// Expert stats/earnings for current user
 router.get('/stats', getDashboardStats);
 router.get('/earnings', getEarnings);
 router.get('/activity', getRecentActivity);
 router.get('/recent-activity', getRecentActivity); // Alias
+
+// Admin routes for experts
+router.get('/admin/all', admin, getAllExperts);
 
 module.exports = router;
