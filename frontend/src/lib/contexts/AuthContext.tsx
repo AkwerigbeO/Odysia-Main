@@ -16,6 +16,13 @@ interface User {
   skills?: string[]
   companyName?: string
   phone?: string
+  portfolioLink?: string
+  githubLink?: string
+  linkedinLink?: string
+  activeChats?: number
+  pendingActions?: number
+  rating?: number
+  verified?: boolean
 }
 
 export interface RegistrationData {

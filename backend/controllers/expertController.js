@@ -2,6 +2,7 @@ const Project = require('../models/Project');
 const Transaction = require('../models/Transaction');
 const Activity = require('../models/Activity');
 const User = require('../models/User');
+const Message = require('../models/Message');
 
 // @desc    Get expert dashboard stats
 // @route   GET /api/expert/stats
@@ -15,7 +16,8 @@ const getDashboardStats = async (req, res, next) => {
             activeProjectsCount,
             completedProjectsCount,
             earningsResult,
-            activityCount
+            activityCount,
+            activeChatsCount
         ] = await Promise.all([
             // Active Projects
             Project.countDocuments({
@@ -43,13 +45,16 @@ const getDashboardStats = async (req, res, next) => {
                     }
                 }
             ]),
-            // Active Chats (Placeholder using User model field for now, or Activity)
-            // Assuming User model has 'activeChats' counter, otherwise we count distinct conversations
-            User.findById(expertId).select('activeChats rating')
+            // Rating (on User model)
+            User.findById(expertId).select('rating'),
+            // Active Chats: Count distinct senders/recipients for this user
+            Message.distinct('sender', { recipient: expertId })
         ]);
 
         const totalEarnings = earningsResult.length > 0 ? earningsResult[0].total : 0;
-        const activeChats = activityCount ? activityCount.activeChats : 0;
+        // activeChats is rough estimate here (unique people who sent msg to expert). 
+        // For better accuracy we'd check both directions but this is better than '0'.
+        const activeChats = activeChatsCount ? activeChatsCount.length : 0;
         const rating = activityCount ? activityCount.rating : 0;
 
         // Pending Actions: e.g., milestones pending, new proposals

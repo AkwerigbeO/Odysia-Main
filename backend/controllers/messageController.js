@@ -1,5 +1,6 @@
 const Message = require('../models/Message');
 const User = require('../models/User');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all conversations for current user
 // @route   GET /api/messages/conversations
@@ -121,6 +122,14 @@ exports.sendMessage = async (req, res) => {
             content,
             attachments: attachments || []
         });
+
+        await createNotification(
+            recipientId,
+            'message',
+            'New Message',
+            `You received a message from ${req.user.name}`,
+            newMessage._id
+        );
 
         res.status(201).json({
             success: true,

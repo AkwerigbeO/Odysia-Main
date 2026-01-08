@@ -29,7 +29,7 @@ export const FOOTER_NAVIGATION = {
   company: [
     { label: 'About Us', href: '/about' },
     { label: 'How It Works', href: '/how-it-works' },
-    { label: 'For Experts', href: '/experts' },
+    { label: 'For Experts', href: '/expert-application' },
     { label: 'Contact', href: '/contact' },
   ],
   services: [

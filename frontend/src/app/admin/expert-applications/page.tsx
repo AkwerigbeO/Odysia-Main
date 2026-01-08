@@ -1,77 +1,60 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   CheckCircleIcon,
   XCircleIcon,
   EyeIcon,
   ClockIcon,
   UserIcon,
   EnvelopeIcon,
-  PhoneIcon,
   GlobeAltIcon,
-  AcademicCapIcon
+  DocumentArrowDownIcon
 } from '@heroicons/react/24/outline'
 import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations'
-
-// Mock data for demonstration
-const mockApplications = [
-  {
-    id: 1,
-    fullName: 'John Smith',
-    email: 'john.smith@example.com',
-    phone: '+1 (555) 123-4567',
-    country: 'United States',
-    skills: ['Web Development', 'React', 'Node.js', 'MongoDB'],
-    githubLink: 'https://github.com/johnsmith',
-    portfolioLink: 'https://johnsmith.dev',
-    linkedinLink: 'https://linkedin.com/in/johnsmith',
-    bio: 'Senior full-stack developer with 8+ years of experience building scalable web applications. Specialized in React, Node.js, and cloud technologies. Led development teams at multiple startups and delivered projects for Fortune 500 companies.',
-    status: 'pending',
-    submittedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    fullName: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    phone: '+44 20 7946 0958',
-    country: 'United Kingdom',
-    skills: ['UI/UX Design', 'Figma', 'Adobe Creative Suite', 'Prototyping'],
-    githubLink: '',
-    portfolioLink: 'https://sarahjohnson.design',
-    linkedinLink: 'https://linkedin.com/in/sarahjohnson',
-    bio: 'Creative UI/UX designer with 6 years of experience creating user-centered digital experiences. Worked with clients ranging from startups to established brands. Passionate about accessibility and user research.',
-    status: 'approved',
-    submittedAt: '2024-01-14T14:20:00Z'
-  },
-  {
-    id: 3,
-    fullName: 'Michael Chen',
-    email: 'michael.chen@example.com',
-    phone: '+86 138 0013 8000',
-    country: 'China',
-    skills: ['Data Science', 'Python', 'Machine Learning', 'TensorFlow'],
-    githubLink: 'https://github.com/michaelchen',
-    portfolioLink: '',
-    linkedinLink: 'https://linkedin.com/in/michaelchen',
-    bio: 'Data scientist and ML engineer with expertise in computer vision and natural language processing. Published research papers and contributed to open-source projects. Experience with large-scale data processing and model deployment.',
-    status: 'rejected',
-    submittedAt: '2024-01-13T09:15:00Z'
-  }
-]
+import api from '@/lib/axios'
+import toast from 'react-hot-toast'
 
 export default function AdminExpertApplications() {
-  const [applications, setApplications] = useState(mockApplications)
+  const [applications, setApplications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedApplication, setSelectedApplication] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
 
-  const handleStatusChange = (id: number, status: 'approved' | 'rejected') => {
-    setApplications(prev => 
-      prev.map(app => 
-        app.id === id ? { ...app, status } : app
-      )
-    )
+  useEffect(() => {
+    fetchApplications()
+  }, [])
+
+  const fetchApplications = async () => {
+    try {
+      const { data } = await api.get('/expert-applications')
+      if (data.success) {
+        setApplications(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch applications:', error)
+      toast.error('Failed to load applications')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStatusChange = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      const action = status === 'approved' ? 'approve' : 'reject'
+      const { data } = await api.put(`/expert-applications/${id}/${action}`)
+      if (data.success) {
+        toast.success(`Application ${status} successfully`)
+        fetchApplications() // Refresh list
+        if (selectedApplication?._id === id) {
+          setSelectedApplication((prev: any) => ({ ...prev, status }))
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to ${status} application:`, error)
+      toast.error(`Failed to ${status} application`)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -109,7 +92,7 @@ export default function AdminExpertApplications() {
           </motion.div>
 
           {/* Stats */}
-          <motion.div 
+          <motion.div
             variants={staggerItem}
             className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
           >
@@ -157,14 +140,17 @@ export default function AdminExpertApplications() {
             </div>
             <div className="divide-y divide-gray-200 dark:divide-dark-border">
               {applications.map((application) => (
-                <div key={application.id} className="p-6">
+                <div key={application._id} className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
+                      {/* Avatar/Initials */}
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
                           <UserIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                         </div>
                       </div>
+
+                      {/* Name & Contact */}
                       <div>
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           {application.fullName}
@@ -179,8 +165,10 @@ export default function AdminExpertApplications() {
                             {application.country}
                           </span>
                         </div>
+
+                        {/* Tags */}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {application.skills.slice(0, 3).map((skill, index) => (
+                          {application.skills?.slice(0, 3).map((skill: string, index: number) => (
                             <span
                               key={index}
                               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200"
@@ -188,7 +176,7 @@ export default function AdminExpertApplications() {
                               {skill}
                             </span>
                           ))}
-                          {application.skills.length > 3 && (
+                          {application.skills?.length > 3 && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                               +{application.skills.length - 3} more
                             </span>
@@ -196,6 +184,8 @@ export default function AdminExpertApplications() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Actions */}
                     <div className="flex items-center space-x-3">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
                         {getStatusIcon(application.status)}
@@ -214,14 +204,14 @@ export default function AdminExpertApplications() {
                       {application.status === 'pending' && (
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => handleStatusChange(application.id, 'approved')}
+                            onClick={() => handleStatusChange(application._id, 'approved')}
                             className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                           >
                             <CheckCircleIcon className="h-4 w-4 mr-2" />
                             Approve
                           </button>
                           <button
-                            onClick={() => handleStatusChange(application.id, 'rejected')}
+                            onClick={() => handleStatusChange(application._id, 'rejected')}
                             className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                           >
                             <XCircleIcon className="h-4 w-4 mr-2" />
@@ -254,7 +244,7 @@ export default function AdminExpertApplications() {
                   <XCircleIcon className="h-6 w-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -332,6 +322,46 @@ export default function AdminExpertApplications() {
                 </div>
 
                 <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Resume/CV</h3>
+                  {selectedApplication.resume ? (
+                    <div className="flex items-center space-x-4">
+                      {/* View Button */}
+                      <a
+                        href={selectedApplication.resume.startsWith('http')
+                          ? selectedApplication.resume
+                          : selectedApplication.resume.startsWith('/')
+                            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${selectedApplication.resume}`
+                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${selectedApplication.resume}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-dark-border shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card hover:bg-gray-50 dark:hover:bg-dark-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        <EyeIcon className="h-5 w-5 mr-2 text-gray-500" />
+                        View Resume
+                      </a>
+
+                      {/* Download Button */}
+                      <a
+                        href={selectedApplication.resume.startsWith('http')
+                          ? `${selectedApplication.resume}${selectedApplication.resume.includes('?') ? '&' : '?'}download=true`
+                          : selectedApplication.resume.startsWith('/')
+                            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${selectedApplication.resume}?download=true`
+                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${selectedApplication.resume}?download=true`
+                        }
+                        download
+                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+                        Download Resume
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No resume attached.</p>
+                  )}
+                </div>
+
+                <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Application Status</h3>
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedApplication.status)}`}>
                     {getStatusIcon(selectedApplication.status)}
@@ -351,7 +381,7 @@ export default function AdminExpertApplications() {
                   <>
                     <button
                       onClick={() => {
-                        handleStatusChange(selectedApplication.id, 'approved')
+                        handleStatusChange(selectedApplication._id, 'approved')
                         setShowModal(false)
                       }}
                       className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
@@ -360,7 +390,7 @@ export default function AdminExpertApplications() {
                     </button>
                     <button
                       onClick={() => {
-                        handleStatusChange(selectedApplication.id, 'rejected')
+                        handleStatusChange(selectedApplication._id, 'rejected')
                         setShowModal(false)
                       }}
                       className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"

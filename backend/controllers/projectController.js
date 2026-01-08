@@ -1,5 +1,7 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
+const Message = require('../models/Message');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all projects
 // @route   GET /api/projects
@@ -38,7 +40,7 @@ const getProjects = async (req, res, next) => {
 // @access  Private
 const createProject = async (req, res, next) => {
     try {
-        const { title, description, budget, status, startDate, completionDate } = req.body;
+        const { title, description, budget, status, startDate, completionDate, expert } = req.body;
 
         const project = await Project.create({
             client: req.user.id,
@@ -47,8 +49,20 @@ const createProject = async (req, res, next) => {
             budget,
             status,
             startDate,
-            completionDate
+            completionDate,
+            expert
         });
+
+        // Notify Expert if assigned
+        if (expert) {
+            await createNotification(
+                expert,
+                'project',
+                'New Project Assignment',
+                `You have been assigned to the project: ${title}`,
+                project._id
+            );
+        }
 
         res.status(201).json(project);
     } catch (error) {
@@ -76,14 +90,35 @@ const getProjectStats = async (req, res, next) => {
         // Also fetch user stats for completeness (rating, etc)
         const user = await User.findById(userId);
 
+        // Calculate Active Chats dynamically
+        // Using distinct senders who have messaged this user
+        const distinctSenders = await Message.distinct('sender', { recipient: userId });
+        const activeChats = distinctSenders.length;
+
+        // Pending Actions: Count milestones waiting for review (for client) 
+        // or other items depending on user role check if needed. 
+        // For simplicity, we count 'pending_review' milestones in projects owned by this user.
+        let pendingActions = 0;
+        const pendingReviewProjects = await Project.find({
+            client: userId,
+            'milestones.status': 'pending_review'
+        });
+
+        // Sum up exact milestones if needed, or just count projects. 
+        // Let's count actual milestones for accuracy.
+        pendingReviewProjects.forEach(proj => {
+            const pending = proj.milestones.filter(m => m.status === 'pending_review').length;
+            pendingActions += pending;
+        });
+
         res.status(200).json({
             totalProjects,
             inProgress,
             completed,
             totalSpent,
             rating: user.rating || 0,
-            activeChats: user.activeChats || 0,
-            pendingActions: user.pendingActions || 0
+            activeChats,
+            pendingActions
         });
     } catch (error) {
         next(error);
@@ -115,9 +150,18 @@ const submitDeliverable = async (req, res, next) => {
 
         // Add files to milestone
         milestone.files = milestone.files.concat(files);
-        milestone.status = 'completed'; // Mark as completed (or 'pending_review' if you have that status)
+        milestone.status = 'pending_review'; // Mark as pending review for client approval
 
         await project.save();
+
+        // Notify Client
+        await createNotification(
+            project.client,
+            'project',
+            'Milestone Deliverables',
+            `Deliverables submitted for milestone: ${milestone.title}`,
+            project._id
+        );
 
         res.status(200).json({
             success: true,

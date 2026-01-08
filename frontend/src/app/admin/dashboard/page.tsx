@@ -90,8 +90,8 @@ export default function AdminDashboard() {
                             key={tab}
                             onClick={() => setFilter(tab as any)}
                             className={`px-4 py-2 text-sm font-medium rounded-md capitalize transition-colors ${filter === tab
-                                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                 }`}
                         >
                             {tab}
@@ -149,6 +149,35 @@ export default function AdminDashboard() {
                                             {app.portfolioLink && <a href={app.portfolioLink} target="_blank" rel="noopener" className="text-primary-600 hover:underline">Portfolio</a>}
                                             {app.githubLink && <a href={app.githubLink} target="_blank" rel="noopener" className="text-primary-600 hover:underline">GitHub</a>}
                                             {app.linkedinLink && <a href={app.linkedinLink} target="_blank" rel="noopener" className="text-primary-600 hover:underline">LinkedIn</a>}
+                                            {(app as any).resume && (
+                                                <div className="flex gap-4">
+                                                    <a
+                                                        href={(app as any).resume.startsWith('http')
+                                                            ? (app as any).resume
+                                                            : (app as any).resume.startsWith('/')
+                                                                ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${app.resume}`
+                                                                : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${app.resume}`
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-primary-600 hover:underline flex items-center"
+                                                    >
+                                                        View Resume
+                                                    </a>
+                                                    <a
+                                                        href={(app as any).resume.startsWith('http')
+                                                            ? `${(app as any).resume}${(app as any).resume.includes('?') ? '&' : '?'}download=true`
+                                                            : (app as any).resume.startsWith('/')
+                                                                ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${app.resume}?download=true`
+                                                                : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/files/${app.resume}?download=true`
+                                                        }
+                                                        download
+                                                        className="text-primary-600 hover:underline flex items-center"
+                                                    >
+                                                        Download Resume
+                                                    </a>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

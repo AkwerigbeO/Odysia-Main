@@ -18,7 +18,7 @@ import Logo from '@/components/Logo'
 const sidebarItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
     { name: 'Experts', href: '/admin/experts', icon: UsersIcon }, // Future
-    { name: 'Applications', href: '/admin/dashboard', icon: DocumentTextIcon }, // Using dashboard for now
+    { name: 'Applications', href: '/admin/expert-applications', icon: DocumentTextIcon },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -40,7 +40,7 @@ const projectSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['pending', 'in_progress', 'completed', 'paid'],
+            enum: ['pending', 'in_progress', 'pending_review', 'completed', 'paid'],
             default: 'pending'
         },
         dueDate: Date,

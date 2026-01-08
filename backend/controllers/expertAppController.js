@@ -1,4 +1,7 @@
 const ExpertApplication = require('../models/ExpertApplication');
+const User = require('../models/User');
+const { createNotification } = require('./notificationController');
+const { uploadToGridFS } = require('../utils/gridfsHelper');
 
 // @desc    Submit a new expert application
 // @route   POST /api/expert-applications
@@ -7,9 +10,22 @@ const submitApplication = async (req, res, next) => {
     try {
         const {
             fullName, email, phone, country,
-            skills, bio, portfolioLink, githubLink, linkedinLink,
-            resume
+            skills, bio, portfolioLink, githubLink, linkedinLink
         } = req.body;
+
+        let resumeUrl = req.body.resume; // Fallback if sent as string
+
+        // Handle File Upload if present
+        if (req.file) {
+            console.log('Resume file received:', req.file.originalname);
+            const fileData = await uploadToGridFS(
+                req.file.buffer,
+                req.file.originalname,
+                req.file.mimetype,
+                { type: 'resume', email }
+            );
+            resumeUrl = `/api/files/${fileData.id}`;
+        }
 
         // Check if pending application already exists
         const existingApp = await ExpertApplication.findOne({ email });
@@ -28,8 +44,24 @@ const submitApplication = async (req, res, next) => {
             portfolioLink,
             githubLink,
             linkedinLink,
-            resume
+            resume: resumeUrl
         });
+
+        // Notify Admin
+        try {
+            const admin = await User.findOne({ role: 'admin' });
+            if (admin) {
+                await createNotification(
+                    admin._id,
+                    'system',
+                    'New Expert Application',
+                    `New application received from ${fullName}`,
+                    application._id
+                );
+            }
+        } catch (error) {
+            console.error('Failed to notify admin', error);
+        }
 
         res.status(201).json({
             success: true,
@@ -47,7 +79,7 @@ const sendEmail = require('../utils/emailService');
 
 // @desc    Approve an expert application
 // @route   PUT /api/expert-applications/:id/approve
-// @access  Private (Admin) - making public for testing via script for now
+// @access  Private (Admin)
 const approveApplication = async (req, res, next) => {
     try {
         const application = await ExpertApplication.findById(req.params.id);

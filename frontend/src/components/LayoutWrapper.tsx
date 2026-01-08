@@ -10,17 +10,17 @@ interface LayoutWrapperProps {
 
 export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname()
-  
+
   // Routes that should not show navbar and footer
   const excludeNavbarFooter = [
     '/client-dashboard',
     '/client-login',
     '/expert-login',
-    '/experts',
+    '/expert-application',
     '/dashboard'
   ]
-  
-  const shouldExcludeNavbarFooter = excludeNavbarFooter.some(route => 
+
+  const shouldExcludeNavbarFooter = excludeNavbarFooter.some(route =>
     pathname.startsWith(route)
   )
 
