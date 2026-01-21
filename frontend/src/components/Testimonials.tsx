@@ -145,7 +145,9 @@ export default function Testimonials() {
                 className="absolute w-full"
               >
                 <MobileOptimizedCard>
-                  <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 dark:border-dark-border">
+                  <div className="glass-card rounded-2xl shadow-xl p-6 sm:p-8 relative overflow-hidden glow-primary-hover">
+                    {/* Decorative gradient corner */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary-500/10 to-transparent rounded-bl-3xl pointer-events-none" />
                     {/* Avatar and Info */}
                     <div className="flex items-center mb-4 sm:mb-6">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden mr-4 relative flex-shrink-0 bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
@@ -218,7 +220,7 @@ export default function Testimonials() {
 
           {/* Navigation Arrows */}
           <motion.button
-            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white dark:bg-dark-card rounded-full shadow-lg flex items-center justify-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900 transition-colors z-10 mobile-touch-target"
+            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 glass-card rounded-full shadow-lg flex items-center justify-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-500/10 transition-all z-10 mobile-touch-target glow-primary-hover"
             onClick={previous}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -230,7 +232,7 @@ export default function Testimonials() {
           </motion.button>
 
           <motion.button
-            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white dark:bg-dark-card rounded-full shadow-lg flex items-center justify-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900 transition-colors z-10 mobile-touch-target"
+            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 glass-card rounded-full shadow-lg flex items-center justify-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-primary-500/10 transition-all z-10 mobile-touch-target glow-primary-hover"
             onClick={next}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}

@@ -1,52 +1,76 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import { NAVIGATION_LINKS } from '@/constants/navigation'
 import Logo from '@/components/Logo'
-import { fadeInDown, staggerContainer, staggerItem, hoverScale, buttonTap } from '@/lib/animations'
+import { fadeInDown, staggerContainer, staggerItem, hoverScale } from '@/lib/animations'
 import ThemeToggle from './ThemeToggle'
 
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const { scrollY } = useScroll()
+
+  // Handle scroll to shrink navbar
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 50)
+  })
 
   return (
-    <motion.nav 
-      className="bg-white dark:bg-dark-surface shadow-lg sticky top-0 z-50 transition-colors duration-300"
+    <motion.nav
+      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+          ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50'
+          : 'bg-white/60 dark:bg-gray-900/60 backdrop-blur-md'
+        }`}
       variants={fadeInDown}
       initial="hidden"
       animate="visible"
     >
+      {/* Gradient border at bottom when scrolled */}
+      {isScrolled && (
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20">
+        <motion.div
+          className={`flex justify-between items-center transition-all duration-300 ${isScrolled ? 'h-14 sm:h-16' : 'h-16 sm:h-20'
+            }`}
+          layout
+        >
           {/* Logo */}
-          <motion.div 
+          <motion.div
             className="flex-shrink-0"
             variants={hoverScale}
             whileHover="hover"
+            layout
           >
             <Link href="/" className="flex items-center">
               <Logo
                 width={120}
                 height={40}
-                className="h-8 w-auto sm:h-10 md:h-12"
+                className={`w-auto transition-all duration-300 ${isScrolled ? 'h-7 sm:h-8' : 'h-8 sm:h-10 md:h-12'}`}
                 alt="Odysia Logo"
               />
             </Link>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <motion.div 
+          <motion.div
             className="hidden lg:block"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
             <div className="ml-6 xl:ml-10 flex items-baseline space-x-2 xl:space-x-4">
-              {NAVIGATION_LINKS.map((link, index) => (
+              {NAVIGATION_LINKS.map((link) => (
                 <motion.div
                   key={link.href}
                   variants={staggerItem}
@@ -57,11 +81,8 @@ export default function Navbar() {
                     className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-2 xl:px-3 py-2 rounded-md text-sm xl:text-base font-medium transition-colors relative group mobile-touch-target whitespace-nowrap"
                   >
                     {link.label}
-                    <motion.div
-                      className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-600 dark:bg-primary-400 group-hover:w-full transition-all duration-300"
-                      initial={{ width: 0 }}
-                      whileHover={{ width: '100%' }}
-                    />
+                    {/* Gradient underline on hover */}
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-cyan-500 group-hover:w-full transition-all duration-300" />
                   </Link>
                 </motion.div>
               ))}
@@ -69,7 +90,7 @@ export default function Navbar() {
           </motion.div>
 
           {/* CTA Buttons and Theme Toggle - Desktop */}
-          <motion.div 
+          <motion.div
             className="hidden lg:flex items-center space-x-3 xl:space-x-4"
             variants={staggerContainer}
             initial="hidden"
@@ -88,24 +109,13 @@ export default function Navbar() {
             </motion.div>
             <motion.div
               variants={staggerItem}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
             >
               <Link
                 href="/expert-application"
-                className="bg-primary-600 dark:bg-primary-500 text-white px-3 xl:px-4 py-2 rounded-md text-sm xl:text-base font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors relative overflow-hidden group mobile-touch-target whitespace-nowrap"
+                className="btn-gradient px-3 xl:px-4 py-2 rounded-lg text-sm xl:text-base font-medium transition-all duration-300 mobile-touch-target whitespace-nowrap glow-primary-hover"
               >
-                <motion.span
-                  className="relative z-10"
-                  whileHover={{ x: 2 }}
-                >
-                  Apply as Expert
-                </motion.span>
-                <motion.div
-                  className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10"
-                  initial={{ x: '-100%' }}
-                  whileHover={{ x: '100%' }}
-                  transition={{ duration: 0.3 }}
-                />
+                Apply as Expert
               </Link>
             </motion.div>
             <motion.div
@@ -130,9 +140,9 @@ export default function Navbar() {
                 Client Login
               </Link>
             </motion.div>
-            
 
-            
+
+
             {/* Theme Toggle */}
             <motion.div
               variants={staggerItem}
@@ -143,14 +153,14 @@ export default function Navbar() {
           </motion.div>
 
           {/* Mobile menu button and theme toggle */}
-          <motion.div 
+          <motion.div
             className="lg:hidden flex items-center space-x-2 sm:space-x-3"
             whileTap={{ scale: 0.95 }}
           >
             <ThemeToggle />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none focus:text-primary-600 relative mobile-touch-target"
+              className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none focus:text-primary-600 relative mobile-touch-target p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Toggle mobile menu"
             >
               <motion.div
@@ -181,25 +191,25 @@ export default function Navbar() {
               </motion.div>
             </button>
           </motion.div>
-        </div>
+        </motion.div>
 
         {/* Mobile Navigation */}
         <AnimatePresence>
           {isMenuOpen && (
-            <motion.div 
+            <motion.div
               className="lg:hidden"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             >
-              <motion.div 
-                className="px-4 pt-4 pb-6 space-y-2 bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border"
+              <motion.div
+                className="px-4 pt-4 pb-6 space-y-2 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50"
                 variants={staggerContainer}
                 initial="hidden"
                 animate="visible"
               >
-                {NAVIGATION_LINKS.map((link, index) => (
+                {NAVIGATION_LINKS.map((link) => (
                   <motion.div
                     key={link.href}
                     variants={staggerItem}
@@ -214,16 +224,16 @@ export default function Navbar() {
                     </Link>
                   </motion.div>
                 ))}
-                
+
                 {/* Mobile CTA Buttons */}
-                <motion.div 
+                <motion.div
                   className="pt-4 space-y-3"
                   variants={staggerContainer}
                 >
                   <motion.div variants={staggerItem}>
                     <Link
                       href="/start-project"
-                      className="block w-full text-center bg-primary-600 dark:bg-primary-500 text-white px-4 py-3 rounded-lg text-base font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors mobile-touch-target"
+                      className="block w-full text-center btn-gradient px-4 py-3 rounded-xl text-base font-medium transition-colors mobile-touch-target"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Start a Project
@@ -232,7 +242,7 @@ export default function Navbar() {
                   <motion.div variants={staggerItem}>
                     <Link
                       href="/expert-application"
-                      className="block w-full text-center border-2 border-primary-600 dark:border-primary-400 text-primary-600 dark:text-primary-400 px-4 py-3 rounded-lg text-base font-medium hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white dark:hover:text-white transition-colors mobile-touch-target"
+                      className="block w-full text-center border-2 border-primary-600 dark:border-primary-400 text-primary-600 dark:text-primary-400 px-4 py-3 rounded-xl text-base font-medium hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white dark:hover:text-white transition-colors mobile-touch-target"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Apply as Expert
@@ -241,7 +251,7 @@ export default function Navbar() {
                   <motion.div variants={staggerItem}>
                     <Link
                       href="/expert-login"
-                      className="block w-full text-center text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-4 py-3 rounded-lg text-base font-medium transition-colors mobile-touch-target"
+                      className="block w-full text-center text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-4 py-3 rounded-xl text-base font-medium transition-colors mobile-touch-target"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Expert Login
@@ -250,7 +260,7 @@ export default function Navbar() {
                   <motion.div variants={staggerItem}>
                     <Link
                       href="/client-login"
-                      className="block w-full text-center text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-4 py-3 rounded-lg text-base font-medium transition-colors mobile-touch-target"
+                      className="block w-full text-center text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 px-4 py-3 rounded-xl text-base font-medium transition-colors mobile-touch-target"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Client Login
@@ -264,4 +274,4 @@ export default function Navbar() {
       </div>
     </motion.nav>
   )
-} 
+}

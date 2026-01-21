@@ -3,47 +3,49 @@
 import { motion } from 'framer-motion'
 import { SERVICES_DATA } from '@/constants/services'
 import ServiceCard from '@/components/ServiceCard'
-import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations'
+import { revealBlur, staggerDramatic, staggerItemDramatic, fadeInUp } from '@/lib/animations'
 
 export default function Services() {
   return (
-    <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white dark:bg-dark-bg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
+    <section className="py-16 sm:py-20 md:py-24 lg:py-32 bg-white dark:bg-gray-950 relative overflow-hidden">
+      {/* Background gradient mesh */}
+      <div className="absolute inset-0 gradient-mesh opacity-30" />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
           className="text-center mb-16 sm:mb-20"
-          variants={fadeInUp}
+          variants={revealBlur}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-dark-text mb-6 sm:mb-8 leading-tight">
-            Our Core Services
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8 leading-tight">
+            Our <span className="gradient-text-animated">Core Services</span>
           </h2>
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-dark-text-secondary max-w-4xl mx-auto px-4 sm:px-0 leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto px-4 sm:px-0 leading-relaxed">
             Expert tech talent for your web development, UI/UX design, and cloud infrastructure needs
           </p>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10"
-          variants={staggerContainer}
+          variants={staggerDramatic}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-50px" }}
         >
           {SERVICES_DATA.map((service, index) => (
-            <motion.div 
-              key={service.id} 
-              variants={staggerItem}
+            <motion.div
+              key={service.id}
+              variants={staggerItemDramatic}
               whileHover={{ y: -8 }}
-              transition={{ delay: index * 0.1 }}
             >
               <ServiceCard service={service} />
             </motion.div>
           ))}
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="text-center mt-12 sm:mt-16"
           variants={fadeInUp}
           initial="hidden"
@@ -51,9 +53,9 @@ export default function Services() {
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          <p className="text-base sm:text-lg text-gray-600 dark:text-dark-text-secondary mb-4 sm:mb-6">Need a custom solution?</p>
-          <a 
-            href="/contact" 
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 mb-4 sm:mb-6">Need a custom solution?</p>
+          <a
+            href="/contact"
             className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-semibold transition-colors mobile-touch-target text-base sm:text-lg group"
           >
             Let&apos;s discuss your project

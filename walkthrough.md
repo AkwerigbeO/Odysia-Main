@@ -9,6 +9,7 @@ We addressed the critical issues identified in the audit:
   - Added `pending_review` to `Project` model enums.
 - **Dynamic Stats**: Refactored `expertController` and `projectController` to calculate `activeChats` and `pendingActions` on-the-fly, ensuring dashboards show real data.
 - **Security**: Confirmed administrative middleware for expert application routes and updated comments.
+- **Expert Management Built**: Created the missing Admin Experts page (`/admin/experts`) with a searchable grid, profile modals, and backend API integration.
 - **Application Actions Fixed**: Corrected the API mapping for approving and rejecting applications (changing `approved`/`rejected` to the correct `approve`/`reject` endpoints).
 - **Resume Link Fixes**:
   - Implemented absolute URL construction on the frontend to prevent 404 errors (pointing to the backend API instead of the frontend host).
