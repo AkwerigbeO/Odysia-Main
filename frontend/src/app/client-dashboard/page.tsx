@@ -1,404 +1,237 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  FolderIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  CurrencyDollarIcon,
-  PlusIcon,
-  EyeIcon,
-  UserIcon,
-  CalendarIcon,
-  StarIcon,
-  ChatBubbleLeftRightIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  ExclamationTriangleIcon,
-  DocumentTextIcon,
-  CreditCardIcon,
-  ArrowRightIcon
-} from '@heroicons/react/24/outline'
-import { useCurrency } from '@/lib/contexts/CurrencyContext'
 import { useAuth } from '@/lib/contexts/AuthContext'
-import api from '@/lib/axios'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  BriefcaseIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  CheckCircleIcon,
+  PlusIcon,
+  ChatBubbleLeftRightIcon,
+  DocumentTextIcon,
+  BellIcon,
+  ArrowRightIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline'
+import { staggerContainer, staggerItem, fadeInUp, floatingSlow, floatingFast } from '@/lib/animations'
 
-// Mobile-optimized animations
-const simpleFadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.3 } }
-}
+// Mock Data (Replace with API calls)
+const MOCK_STATS = [
+  { label: 'Active Projects', value: '3', icon: BriefcaseIcon, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { label: 'Pending Proposals', value: '5', icon: DocumentTextIcon, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { label: 'Total Spent', value: '$12,450', icon: CurrencyDollarIcon, color: 'text-green-500', bg: 'bg-green-500/10' },
+  { label: 'Completed', value: '8', icon: CheckCircleIcon, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+]
 
-const slideUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
-}
+const MOCK_ACTIVITIES = [
+  { id: 1, type: 'proposal', message: 'New proposal received for "E-commerce Redesign"', time: '2 hours ago', icon: DocumentTextIcon, color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/20' },
+  { id: 2, type: 'message', message: 'Message from Alex (Frontend Expert)', time: '5 hours ago', icon: ChatBubbleLeftRightIcon, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/20' },
+  { id: 3, type: 'payment', message: 'Payment released for Milestone 2', time: '1 day ago', icon: CurrencyDollarIcon, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/20' },
+  { id: 4, type: 'system', message: 'Project "Mobile App" marked as completed', time: '2 days ago', icon: CheckCircleIcon, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+]
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-}
+export default function ClientDashboard() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [greeting, setGreeting] = useState('')
 
-const staggerItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-}
-
-export default function ClientDashboardPage() {
-  const { user } = useAuth()
-  const { formatAmount } = useCurrency()
-  const [stats, setStats] = useState({
-    totalProjects: 0,
-    inProgress: 0,
-    completed: 0,
-    totalSpent: 0,
-    rating: 0,
-    activeChats: 0,
-    pendingActions: 0
-  })
-  const [activities, setActivities] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Fetch Dashboard Data
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsRes, activityRes] = await Promise.all([
-          api.get('/projects/stats'),
-          api.get('/notifications/activity')
-        ])
-        setStats(statsRes.data)
-        setActivities(activityRes.data)
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
+    if (!loading && !user) {
+      router.push('/client-login')
     }
+  }, [user, loading, router])
 
-    if (user) {
-      fetchDashboardData()
-    }
-  }, [user])
-
-  const summaryStats = [
-    {
-      title: "Total Projects",
-      value: stats.totalProjects,
-      change: "All time",
-      changeType: "positive",
-      icon: FolderIcon,
-      color: "bg-blue-500",
-      description: "All time projects"
-    },
-    {
-      title: "In Progress",
-      value: stats.inProgress,
-      change: "Active",
-      changeType: "positive",
-      icon: ClockIcon,
-      color: "bg-yellow-500",
-      description: "Active projects"
-    },
-    {
-      title: "Completed",
-      value: stats.completed,
-      change: "Finished",
-      changeType: "positive",
-      icon: CheckCircleIcon,
-      color: "bg-green-500",
-      description: "Finished projects"
-    },
-    {
-      title: "Total Spent",
-      value: formatAmount(stats.totalSpent),
-      change: "Invested",
-      changeType: "positive",
-      icon: CurrencyDollarIcon,
-      color: "bg-purple-500",
-      description: "Total spend"
-    }
-  ]
-
-  const quickActions = [
-    {
-      title: "Create New Project",
-      description: "Start a new project and find experts",
-      icon: PlusIcon,
-      color: "bg-blue-600",
-      href: "/client-dashboard/projects/create"
-    },
-    {
-      title: "View Proposals",
-      description: "Review expert proposals for your projects",
-      icon: EyeIcon,
-      color: "bg-green-600",
-      href: "/client-dashboard/proposals"
-    },
-    {
-      title: "Active Projects",
-      description: "Track your ongoing projects",
-      icon: ClockIcon,
-      color: "bg-yellow-600",
-      href: "/client-dashboard/projects"
-    },
-    {
-      title: "Messages",
-      description: "Chat with your project experts",
-      icon: ChatBubbleLeftRightIcon,
-      color: "bg-purple-600",
-      href: "/client-dashboard/messages"
-    }
-  ]
-
-  const handleQuickAction = useCallback((href: string) => {
-    window.open(href, '_self')
+  useEffect(() => {
+    const hour = new Date().getHours()
+    if (hour < 12) setGreeting('Good Morning')
+    else if (hour < 18) setGreeting('Good Afternoon')
+    else setGreeting('Good Evening')
   }, [])
 
-  const getActivityIcon = useCallback((type: string) => {
-    switch (type) {
-      case 'project_created': return <FolderIcon className="h-4 w-4" />
-      case 'proposal_received': return <DocumentTextIcon className="h-4 w-4" />
-      case 'payment_released': return <CreditCardIcon className="h-4 w-4" />
-      case 'project_completed': return <CheckCircleIcon className="h-4 w-4" />
-      case 'message_received': return <ChatBubbleLeftRightIcon className="h-4 w-4" />
-      default: return <CalendarIcon className="h-4 w-4" />
-    }
-  }, [])
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
-    <motion.div
-      variants={staggerContainer}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
-      {/* Welcome Banner - Mobile Optimized */}
-      <motion.div
-        variants={simpleFadeIn}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 rounded-2xl shadow-sm p-6 text-white"
-      >
-        <div className="flex flex-col space-y-3">
-          <h1 className="text-2xl font-bold">
-            Welcome back, {user?.name || 'Client'}! 👋
-          </h1>
-          <p className="text-blue-100 dark:text-blue-200 text-base">
-            Ready to build something amazing?
-          </p>
-        </div>
-      </motion.div>
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg transition-colors duration-300 relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 max-h-[500px] bg-gradient-to-b from-primary-500/5 to-transparent z-0 pointer-events-none" />
 
-      {/* Summary Cards - Mobile Grid */}
-      <motion.div
-        variants={simpleFadeIn}
-        className="grid grid-cols-2 gap-4"
-      >
-        {summaryStats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <motion.div
-              key={stat.title}
-              variants={staggerItem}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 border border-gray-200 dark:border-gray-700"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-3 rounded-xl ${stat.color} text-white`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex items-center space-x-1">
-                  {stat.changeType === 'positive' ? (
-                    <ArrowUpIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <ArrowDownIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  )}
-                  <span className={`text-sm font-medium ${stat.changeType === 'positive'
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
-                    }`}>
-                    {stat.change}
-                  </span>
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                {stat.value}
-              </h3>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                {stat.title}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
-                {stat.description}
-              </p>
-            </motion.div>
-          )
-        })}
-      </motion.div>
-
-      {/* Quick Actions - Mobile Optimized */}
-      <motion.div
-        variants={simpleFadeIn}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Quick Actions</h2>
-          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-            <CalendarIcon className="h-4 w-4" />
-            <span>Today</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon
-            return (
-              <motion.button
-                key={action.title}
-                variants={staggerItem}
-                onClick={() => handleQuickAction(action.href)}
-                className="flex items-center space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                style={{
-                  minHeight: '64px',
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
-                }}
-              >
-                <div className={`p-3 rounded-xl ${action.color} text-white`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div className="flex-1 text-left">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                    {action.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {action.description}
-                  </p>
-                </div>
-                <ArrowRightIcon className="h-5 w-5 text-gray-400" />
-              </motion.button>
-            )
-          })}
-        </div>
-      </motion.div>
-
-      {/* Recent Activity - Mobile Optimized */}
-      <motion.div
-        variants={simpleFadeIn}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Activity</h2>
-          <button
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-            style={{
-              minHeight: '44px',
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation'
-            }}
+      <main className="container mx-auto px-4 py-8 relative z-10">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
+          {/* Welcome Banner */}
+          <motion.div
+            variants={staggerItem}
+            className="relative overflow-hidden rounded-3xl p-8 sm:p-10 shadow-lg group"
           >
-            View All
-          </button>
-        </div>
+            {/* Gradient Mesh Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-purple-700 opacity-90 transition-opacity z-0" />
+            <div className="absolute inset-0 gradient-mesh opacity-30 mix-blend-overlay z-0" />
 
-        <div className="space-y-4">
-          {activities.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">No recent activity</p>
-          ) : activities.slice(0, 5).map((activity, index) => (
+            {/* Animated Shapes */}
             <motion.div
-              key={activity.id}
-              variants={staggerItem}
-              className="flex items-start space-x-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              style={{
-                minHeight: '72px',
-                WebkitTapHighlightColor: 'transparent',
-                touchAction: 'manipulation'
-              }}
-            >
-              <div className={`p-2 rounded-lg ${activity.color} text-white flex-shrink-0`}>
-                {getActivityIcon(activity.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                  {activity.title}
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                  {activity.description}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  {new Date(activity.createdAt).toLocaleDateString()}
+              variants={floatingSlow}
+              initial="initial"
+              animate="animate"
+              className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
+            />
+            <motion.div
+              variants={floatingFast}
+              initial="initial"
+              animate="animate"
+              className="absolute -bottom-10 left-10 w-40 h-40 bg-purple-400/20 rounded-full blur-2xl"
+            />
+
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="text-white">
+                <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+                  {greeting}, {user.name.split(' ')[0]}! 👋
+                </h1>
+                <p className="text-primary-100 text-lg max-w-xl">
+                  Ready to manage your projects? You have <span className="font-semibold text-white">3 active projects</span> requiring your attention.
                 </p>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
 
-      {/* Additional Stats - Mobile Grid */}
-      <motion.div
-        variants={simpleFadeIn}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
-              <StarIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <Link href="/client-dashboard/post-job">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center space-x-2 bg-white text-primary-600 px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Post New Job</span>
+                </motion.button>
+              </Link>
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Average Rating</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">From completed projects</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.rating}</span>
-            <div className="flex items-center space-x-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <StarIcon
-                  key={star}
-                  className={`h-4 w-4 ${star <= Math.round(stats.rating) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'
-                    }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+          </motion.div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
-              <ChatBubbleLeftRightIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Active Chats</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">With project experts</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.activeChats}</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">conversations</span>
-          </div>
-        </div>
+          {/* Stats Grid */}
+          <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {MOCK_STATS.map((stat, index) => (
+              <motion.div
+                key={index}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="glass-card p-6 rounded-2xl border border-white/20 dark:border-gray-700/30 flex flex-col justify-between h-full shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-3 rounded-xl ${stat.bg}`}>
+                    <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                  </div>
+                  {index === 2 && <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">+12%</span>}
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{stat.label}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
-              <ExclamationTriangleIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          {/* Main Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Left Column: Recent Activity */}
+            <div className="lg:col-span-2 space-y-6">
+              <motion.div variants={staggerItem} className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <ClockIcon className="w-6 h-6 text-primary-500" />
+                  Recent Activity
+                </h2>
+                <button className="text-sm text-primary-600 font-medium hover:text-primary-700 hover:underline">View All</button>
+              </motion.div>
+
+              <motion.div
+                variants={staggerContainer}
+                className="glass-card rounded-2xl border border-white/20 dark:border-gray-700/30 p-2 shadow-sm"
+              >
+                {MOCK_ACTIVITIES.map((activity) => (
+                  <motion.div
+                    key={activity.id}
+                    variants={fadeInUp}
+                    className="group flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+                  >
+                    <div className={`p-3 rounded-full flex-shrink-0 ${activity.bg}`}>
+                      <activity.icon className={`w-5 h-5 ${activity.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                        {activity.message}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)} • {activity.time}
+                      </p>
+                    </div>
+                    <ArrowRightIcon className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </motion.div>
+                ))}
+              </motion.div>
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Pending Actions</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Require your attention</p>
+
+            {/* Right Column: Quick Actions & Support */}
+            <div className="space-y-6">
+              <motion.div variants={staggerItem}>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                  <ChatBubbleLeftRightIcon className="w-6 h-6 text-orange-500" />
+                  Quick Actions
+                </h2>
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { label: 'Browse Experts', icon: BriefcaseIcon, href: '/experts', color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/10' },
+                    { label: 'View Invoices', icon: DocumentTextIcon, href: '/invoices', color: 'text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/10' },
+                    { label: 'Project Settings', icon: ChartBarIcon, href: '/settings', color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/10' }
+                  ].map((action, i) => (
+                    <Link key={i} href={action.href}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="glass-card p-4 rounded-xl border border-white/20 dark:border-gray-700/30 flex items-center justify-between shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2.5 rounded-lg ${action.bg}`}>
+                            <action.icon className={`w-6 h-6 ${action.color}`} />
+                          </div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{action.label}</span>
+                        </div>
+                        <ArrowRightIcon className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                      </motion.div>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Promo / Support Card */}
+              <motion.div
+                variants={staggerItem}
+                className="relative overflow-hidden rounded-2xl p-6 text-white"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-blue-500 z-0" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
+
+                <div className="relative z-10">
+                  <h3 className="text-lg font-bold mb-2">Need help?</h3>
+                  <p className="text-blue-100 text-sm mb-4">Our support team is available 24/7 to assist you with your projects.</p>
+                  <button className="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-sm font-semibold transition-colors">
+                    Contact Support
+                  </button>
+                </div>
+              </motion.div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats.pendingActions}</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400">items</span>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
+        </motion.div>
+      </main>
+    </div>
   )
 }

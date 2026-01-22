@@ -177,4 +177,202 @@ module.exports = {
     createProject,
     getProjectStats,
     submitDeliverable
+    submitDeliverable,
+    getProjectById,
+    updateProject,
+    addMilestone,
+    updateMilestoneStatus
+};
+
+// @desc    Get single project by ID
+// @route   GET /api/projects/:id
+// @access  Private
+const getProjectById = async (req, res, next) => {
+    try {
+        const project = await Project.findById(req.params.id)
+            .populate('client', 'name email avatar')
+            .populate('expert', 'name email avatar')
+            .populate('milestones.files'); // Populate files if they are refs, though schema might just have them as objects
+
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
+
+        // Access check
+        if (project.client._id.toString() !== req.user.id &&
+            (project.expert && project.expert._id.toString() !== req.user.id) &&
+            req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Not authorized to view this project' });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: project
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update project details
+// @route   PUT /api/projects/:id
+// @access  Private (Client/Admin only)
+const updateProject = async (req, res, next) => {
+    try {
+        let project = await Project.findById(req.params.id);
+
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
+
+        // Access check
+        if (project.client.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Not authorized to update this project' });
+        }
+
+        // Prevent updates if project is already completed or cancelled
+        if (['completed', 'cancelled'].includes(project.status) && req.user.role !== 'admin') {
+            return res.status(400).json({ success: false, error: 'Cannot update project in this status' });
+        }
+
+        // fields to update
+        const { title, description, budget, status, completionDate } = req.body;
+
+        // simple update
+        if (title) project.title = title;
+        if (description) project.description = description;
+        if (budget) project.budget = budget;
+        if (status) project.status = status;
+        if (completionDate) project.completionDate = completionDate;
+
+        await project.save();
+
+        res.status(200).json({
+            success: true,
+            data: project
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Add a milestone to project
+// @route   POST /api/projects/:id/milestones
+// @access  Private (Client/Admin only)
+const addMilestone = async (req, res, next) => {
+    try {
+        const { title, description, amount, dueDate } = req.body;
+        const project = await Project.findById(req.params.id);
+
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
+
+        // Access check
+        if (project.client.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Not authorized' });
+        }
+
+        // Add milestone
+        project.milestones.push({
+            title,
+            description,
+            amount: amount || 0,
+            dueDate,
+            status: 'pending' // default
+        });
+
+        await project.save();
+
+        // Notify expert if exists
+        if (project.expert) {
+            await createNotification(
+                project.expert,
+                'project',
+                'New Milestone Added',
+                `A new milestone "${title}" has been added to project: ${project.title}`,
+                project._id
+            );
+        }
+
+        res.status(200).json({
+            success: true,
+            data: project
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Update milestone status (Approve/Reject)
+// @route   PUT /api/projects/:id/milestones/:milestoneId
+// @access  Private
+const updateMilestoneStatus = async (req, res, next) => {
+    try {
+        const { status, remarks } = req.body; // status: 'approved', 'rejected'
+        const { id, milestoneId } = req.params;
+
+        const project = await Project.findById(id);
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found' });
+        }
+
+        const milestone = project.milestones.id(milestoneId);
+        if (!milestone) {
+            return res.status(404).json({ success: false, error: 'Milestone not found' });
+        }
+
+        // Authorization Logic
+        // Client can Approve/Reject.
+        // Expert can theoretically mark as 'submitted'? (already handled in submitDeliverable)
+        // Let's assume this endpoint is mainly for CLIENT approval/rejection.
+        if (project.client.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Not authorized to approve/reject' });
+        }
+
+        // Update status
+        if (['approved', 'rejected', 'active'].includes(status)) {
+            milestone.status = status;
+        }
+
+        // If approved
+        if (status === 'approved') {
+            // Logic to release fund would go here (Phase 2)
+            // For now, we just mark it.
+            // Notify Expert
+            if (project.expert) {
+                await createNotification(
+                    project.expert,
+                    'payment',
+                    'Milestone Approved',
+                    `Milestone "${milestone.title}" has been approved! Funds released.`,
+                    project._id
+                );
+            }
+        }
+        // If rejected
+        else if (status === 'rejected') {
+            // Notify Expert
+            if (project.expert) {
+                await createNotification(
+                    project.expert,
+                    'project',
+                    'Milestone Rejected',
+                    `Action Required: Milestone "${milestone.title}" was rejected. Remarks: ${remarks || 'No remarks'}`,
+                    project._id
+                );
+            }
+        }
+
+        await project.save();
+
+        res.status(200).json({
+            success: true,
+            data: project
+        });
+
+    } catch (error) {
+        next(error);
+    }
 };
