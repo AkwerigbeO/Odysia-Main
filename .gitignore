@@ -36,3 +36,4 @@ backend/seed_*.js
 inspect_*.js
 backend/inspect_*.js
 *.local
+experts_list.json

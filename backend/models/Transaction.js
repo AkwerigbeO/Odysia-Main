@@ -28,6 +28,10 @@ const transactionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Project'
     },
+    milestone: {
+        type: mongoose.Schema.Types.ObjectId,
+        // No ref needed for subdocument usually, but could verify against project
+    },
     type: {
         type: String,
         enum: ['milestone_payment', 'refund', 'bonus', 'adjustment'],

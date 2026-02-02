@@ -45,6 +45,7 @@ app.use('/api/expert-applications', require('./routes/expertAppRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/files', require('./routes/uploadRoutes'));
+app.use('/api/payment', require('./routes/paymentRoutes'));
 
 app.get('/', (req, res) => {
   res.send('API is running...');

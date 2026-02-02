@@ -11,6 +11,7 @@ import {
   QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline'
 import DashboardLayout from './DashboardLayout'
+import ClientAuthGuard from '@/components/dashboard/ClientAuthGuard'
 import Navbar from './Navbar'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
 import { useAuth } from '@/lib/contexts/AuthContext'
@@ -148,15 +149,17 @@ export default function ClientDashboardWrapper({ children }: ClientDashboardWrap
   )
 
   return (
-    <DashboardLayout
-      dashboardType="client"
-      sidebarItems={sidebarItems}
-      activeSection={activeSection}
-      userProfile={userProfile}
-      onLogout={handleLogout}
-      customNavbarContent={navbarContent}
-    >
-      {children}
-    </DashboardLayout>
+    <ClientAuthGuard>
+      <DashboardLayout
+        dashboardType="client"
+        sidebarItems={sidebarItems}
+        activeSection={activeSection}
+        userProfile={userProfile}
+        onLogout={handleLogout}
+        customNavbarContent={navbarContent}
+      >
+        {children}
+      </DashboardLayout>
+    </ClientAuthGuard>
   )
 }

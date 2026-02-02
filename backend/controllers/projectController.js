@@ -172,17 +172,7 @@ const submitDeliverable = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    getProjects,
-    createProject,
-    getProjectStats,
-    submitDeliverable
-    submitDeliverable,
-    getProjectById,
-    updateProject,
-    addMilestone,
-    updateMilestoneStatus
-};
+
 
 // @desc    Get single project by ID
 // @route   GET /api/projects/:id
@@ -375,4 +365,15 @@ const updateMilestoneStatus = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+};
+
+module.exports = {
+    getProjects,
+    createProject,
+    getProjectStats,
+    submitDeliverable,
+    getProjectById,
+    updateProject,
+    addMilestone,
+    updateMilestoneStatus
 };

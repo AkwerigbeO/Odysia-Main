@@ -36,7 +36,7 @@ const registerUser = async (req, res, next) => {
             email,
             password,
             phone,
-            role: role || 'user', // Default to 'user' if not specified
+            role: role || (clientType ? 'client' : 'user'), // Default to 'client' if clientType exists, else 'user'
             clientType,
             companyName,
             country,
@@ -59,6 +59,18 @@ const registerUser = async (req, res, next) => {
                 role: user.role,
                 token: generateToken(user._id),
             });
+
+            // Send Welcome Email
+            try {
+                await sendEmail({
+                    email: user.email,
+                    subject: 'Welcome to Odysia!',
+                    message: `Hi ${user.name},\n\nWelcome to Odysia! We are excited to have you on board.\n\nBest regards,\nThe Odysia Team`
+                });
+            } catch (err) {
+                console.error('Welcome email failed to send:', err);
+                // We don't fail the registration if email fails, just log it
+            }
         } else {
             res.status(400);
             throw new Error('Invalid user data');

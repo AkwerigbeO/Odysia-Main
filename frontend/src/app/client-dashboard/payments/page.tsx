@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   CurrencyDollarIcon,
@@ -10,21 +10,17 @@ import {
   ArrowDownIcon,
   ClockIcon,
   CheckCircleIcon,
-  XCircleIcon,
   EyeIcon,
   ArrowDownTrayIcon,
   CalendarIcon,
-  UserIcon,
-  PlusIcon,
+  ReceiptRefundIcon,
   LockClosedIcon,
-  ShieldCheckIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  DocumentTextIcon,
-  ReceiptRefundIcon
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import api from '@/lib/axios'
+import { toast } from 'react-hot-toast'
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -53,82 +49,73 @@ export default function ClientPaymentsPage() {
   const [dateRange, setDateRange] = useState('all')
   const { formatAmount } = useCurrency()
 
-  const escrowBalance = {
-    total: 0,
-    available: 0,
-    pending: 0,
-    released: 0
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      const { data } = await api.get('/payment')
+      setTransactions(data.data || [])
+    } catch (error) {
+      console.error('Error fetching transactions:', error)
+      toast.error('Failed to load transaction history')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const pendingMilestones: any[] = []
+  // Calculate stats from real data
+  const escrowBalance = transactions.reduce((acc, t) => {
+    if (t.status === 'pending' && t.type === 'milestone_payment') {
+      // Pending usually means "Initialized but not paid" OR "Paid into Escrow but not released"
+      // In our Paystack flow, 'pending' means initialized. 'completed' means paid to platform/escrow.
+      // We need a status for 'released' to expert.
+      // For now, let's assume 'completed' = In Escrow (since we verified payment successfully)
+      // We might need a 'released' status in backend later.
+      // Let's treat 'completed' as "In Escrow" for now, as that's whatverifyPayment does.
+      return acc + t.amount
+    }
+    return acc
+  }, 0)
 
-  const paymentHistory: any[] = []
+  // Assuming we add a 'released' status later. Currently verifyPayment sets to 'completed'.
+  // Let's display 'completed' payments as "In Escrow / Paid"
+  const totalPaid = transactions
+    .filter(t => t.status === 'completed')
+    .reduce((acc, t) => acc + t.amount, 0)
 
-  const filteredPayments = paymentHistory.filter(payment => {
-    const matchesFilter = filter === 'all' || payment.type === filter
-    const matchesSearch = payment.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.expert.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const filteredPayments = transactions.filter(payment => {
+    const matchesFilter = filter === 'all' || payment.status === filter
+    const matchesSearch = (payment.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment.reference || '').toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ready': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-      case 'in_progress': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-      case 'pending': return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+      case 'completed': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+      case 'pending': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+      case 'failed': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
       default: return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
     }
   }
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'ready': return 'Ready to Release'
-      case 'in_progress': return 'In Progress'
-      case 'pending': return 'Pending'
-      default: return 'Unknown'
-    }
+    // Capitalize
+    return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'released': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-      case 'deposited': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-      case 'held': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-      case 'pending': return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-      default: return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-    }
-  }
-
-  const getTypeText = (type: string) => {
-    switch (type) {
-      case 'released': return 'Released'
-      case 'deposited': return 'Deposited'
-      case 'held': return 'Held in Escrow'
-      case 'pending': return 'Pending'
-      default: return 'Unknown'
-    }
-  }
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'released': return <ArrowDownIcon className="h-4 w-4" />
-      case 'deposited': return <ArrowUpIcon className="h-4 w-4" />
-      case 'held': return <LockClosedIcon className="h-4 w-4" />
-      case 'pending': return <ClockIcon className="h-4 w-4" />
-      default: return <CurrencyDollarIcon className="h-4 w-4" />
-    }
-  }
-
-  const handleDownloadInvoice = (invoice: string) => {
-    console.log('Downloading invoice:', invoice)
-  }
-
-  const handleViewReceipt = (receipt: string) => {
-    console.log('Viewing receipt:', receipt)
-  }
-
-  const handleReleasePayment = (milestoneId: number) => {
-    console.log('Releasing payment for milestone:', milestoneId)
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
   }
 
   return (
@@ -138,412 +125,115 @@ export default function ClientPaymentsPage() {
       animate="visible"
       className="space-y-6"
     >
-      {/* Header - Mobile Optimized */}
+      {/* Header */}
       <motion.div variants={fadeInUp} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payments & Escrow</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1 text-base">
-              Manage your escrow balance and payment history
+              Manage your project payments
             </p>
           </div>
 
-          {/* Search and Filters - Mobile Stack */}
           <div className="space-y-3">
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search payments..."
+                placeholder="Search by description or reference..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors text-base"
-                style={{
-                  minHeight: '48px',
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
-                }}
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* Filter */}
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors text-base"
-                style={{
-                  minHeight: '48px',
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
-                }}
               >
-                <option value="all">All Payments</option>
-                <option value="released">Released</option>
-                <option value="deposited">Deposited</option>
-                <option value="held">Held in Escrow</option>
+                <option value="all">All Statuses</option>
+                <option value="completed">Completed</option>
                 <option value="pending">Pending</option>
-              </select>
-
-              {/* Date Range */}
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors text-base"
-                style={{
-                  minHeight: '48px',
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
-                }}
-              >
-                <option value="all">All Time</option>
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="quarter">Last Quarter</option>
-                <option value="year">Last Year</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Top Summary Boxes - Mobile Grid */}
-      <motion.div variants={fadeInUp} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Cards */}
+      <motion.div variants={fadeInUp} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total in Escrow</h3>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
-              <LockClosedIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatAmount(escrowBalance.total)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Securely held funds
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Released</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Funded</h3>
             <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
               <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatAmount(escrowBalance.released)}
+            {formatAmount(totalPaid)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Paid to experts
+            Successful payments
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Available Balance</h3>
-            <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
-              <BanknotesIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatAmount(escrowBalance.available)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Ready for new projects
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Milestones</h3>
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-xl">
-              <ClockIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatAmount(escrowBalance.pending)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Awaiting completion
-          </p>
-        </div>
+        {/* Can add more cards here */}
       </motion.div>
 
-      {/* Tabs - Mobile Optimized */}
-      <motion.div variants={fadeInUp} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-1 px-4 sm:px-6 overflow-x-auto">
-            {[
-              { id: 'overview', label: 'Overview', icon: EyeIcon },
-              { id: 'pending', label: 'Pending Milestones', icon: ClockIcon },
-              { id: 'history', label: 'Payment History', icon: CalendarIcon }
-            ].map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
-                  style={{
-                    minHeight: '48px',
-                    WebkitTapHighlightColor: 'transparent',
-                    touchAction: 'manipulation'
-                  }}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:block">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+      {/* Transactions List */}
+      <motion.div variants={fadeInUp} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Transaction History</h3>
 
-        <div className="p-4 sm:p-6">
-          {activeTab === 'overview' && (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent Activity */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {paymentHistory.slice(0, 3).map((payment) => (
-                      <motion.div
-                        key={payment.id}
-                        variants={staggerItem}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${getTypeColor(payment.type)}`}>
-                            {getTypeIcon(payment.type)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{payment.project}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{payment.description}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-semibold text-sm ${getTypeColor(payment.type)}`}>
-                            {formatAmount(payment.amount)}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{payment.date}</p>
-                        </div>
-                      </motion.div>
-                    ))}
+        <div className="space-y-4">
+          {filteredPayments.length > 0 ? (
+            filteredPayments.map((payment: any) => (
+              <motion.div
+                key={payment._id}
+                variants={staggerItem}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-100 dark:border-gray-700"
+              >
+                <div className="flex items-start space-x-4 mb-4 sm:mb-0">
+                  <div className={`p-3 rounded-full ${payment.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600'}`}>
+                    {payment.status === 'completed' ? <CheckCircleIcon className="h-6 w-6" /> : <ClockIcon className="h-6 w-6" />}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">{payment.description || 'Payment'}</h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Ref: {payment.reference}
+                      </span>
+                      <span className="hidden sm:inline text-gray-300 dark:text-gray-600">•</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(payment.createdAt).toLocaleDateString()} at {new Date(payment.createdAt).toLocaleTimeString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    <button className="w-full flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                      style={{
-                        minHeight: '56px',
-                        WebkitTapHighlightColor: 'transparent',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <CreditCardIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">Add Funds to Escrow</span>
-                      </div>
-                      <ArrowUpIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    </button>
-
-                    <button className="w-full flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                      style={{
-                        minHeight: '56px',
-                        WebkitTapHighlightColor: 'transparent',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <ArrowDownTrayIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">Download Statement</span>
-                      </div>
-                      <ArrowDownIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </button>
-
-                    <button className="w-full flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
-                      style={{
-                        minHeight: '56px',
-                        WebkitTapHighlightColor: 'transparent',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <ReceiptRefundIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">Payment Disputes</span>
-                      </div>
-                      <ArrowUpIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                    {getStatusText(payment.status)}
+                  </span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {formatAmount(payment.amount)}
+                  </span>
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'pending' && (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
-              {pendingMilestones.map((milestone) => (
-                <motion.div
-                  key={milestone.id}
-                  variants={staggerItem}
-                  className="border border-gray-200 dark:border-gray-700 rounded-xl p-6"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-gray-900 dark:text-white text-lg">{milestone.project}</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(milestone.status)}`}>
-                          {getStatusText(milestone.status)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        Expert: {milestone.expert}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        {milestone.description}
-                      </p>
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                        <span>Amount: {formatAmount(milestone.amount)}</span>
-                        <span>Due: {milestone.dueDate}</span>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0">
-                      {milestone.status === 'ready' && (
-                        <button
-                          onClick={() => handleReleasePayment(milestone.id)}
-                          className="bg-green-600 dark:bg-green-500 text-white px-4 py-3 rounded-xl text-sm font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors flex items-center space-x-2"
-                          style={{
-                            minHeight: '48px',
-                            WebkitTapHighlightColor: 'transparent',
-                            touchAction: 'manipulation'
-                          }}
-                        >
-                          <ArrowUpIcon className="h-4 w-4" />
-                          <span>Release Payment</span>
-                        </button>
-                      )}
-                      {milestone.status !== 'ready' && (
-                        <button className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                          style={{
-                            minHeight: '48px',
-                            WebkitTapHighlightColor: 'transparent',
-                            touchAction: 'manipulation'
-                          }}
-                        >
-                          View Details
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-
-          {activeTab === 'history' && (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
-              {/* Payment History - Mobile Optimized Cards */}
-              <div className="space-y-4">
-                {filteredPayments.map((payment) => (
-                  <motion.div
-                    key={payment.id}
-                    variants={staggerItem}
-                    className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600"
-                  >
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 dark:text-white text-base">{payment.project}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{payment.description}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Expert: {payment.expert}</p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(payment.type)}`}>
-                          {getTypeText(payment.type)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                            {formatAmount(payment.amount)}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{payment.date}</p>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleViewReceipt(payment.receipt)}
-                            className="flex items-center space-x-1 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-                            style={{
-                              minHeight: '40px',
-                              WebkitTapHighlightColor: 'transparent',
-                              touchAction: 'manipulation'
-                            }}
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                            <span>Receipt</span>
-                          </button>
-                          <button
-                            onClick={() => handleDownloadInvoice(payment.invoice)}
-                            className="flex items-center space-x-1 px-3 py-2 text-sm bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
-                            style={{
-                              minHeight: '40px',
-                              WebkitTapHighlightColor: 'transparent',
-                              touchAction: 'manipulation'
-                            }}
-                          >
-                            <DocumentTextIcon className="h-4 w-4" />
-                            <span>Invoice</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {filteredPayments.length === 0 && (
-                <motion.div variants={fadeInUp} className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ReceiptRefundIcon className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No payments found</h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {searchTerm || filter !== 'all'
-                      ? 'Try adjusting your search or filter criteria.'
-                      : 'No payment history available.'
-                    }
-                  </p>
-                </motion.div>
-              )}
-            </motion.div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <ReceiptRefundIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">No transactions found</h3>
+              <p className="text-gray-500 dark:text-gray-400">History will appear here once you make payments.</p>
+            </div>
           )}
         </div>
       </motion.div>
+
     </motion.div>
   )
 }

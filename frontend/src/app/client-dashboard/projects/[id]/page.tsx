@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
-import { 
+import {
   ArrowLeftIcon,
   UserIcon,
   ClockIcon,
@@ -29,204 +29,111 @@ import {
   DocumentIcon,
   PlayIcon,
   PauseIcon,
-  StopIcon
+  StopIcon,
+  CreditCardIcon
 } from '@heroicons/react/24/outline'
 import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { useCurrency } from '@/lib/contexts/CurrencyContext'
+import api from '@/lib/axios'
+import BackButton from '@/components/common/BackButton'
+import { toast } from 'react-hot-toast'
+import { useAuth } from '@/lib/contexts/AuthContext'
 
 interface Project {
-  id: number
-  name: string
+  _id: string
+  title: string
   description: string
-  expert: string
-  status: 'pending' | 'in_progress' | 'completed' | 'paused'
+  expert?: {
+    name: string
+    email: string
+    _id: string
+  }
+  status: 'pending' | 'active' | 'completed' | 'cancelled'
   budget: number
-  timeline: string
-  lastUpdated: string
-  progress: number
+  spent: number
   startDate: string
-  endDate: string
-  category: string
-  priority: 'low' | 'medium' | 'high'
+  completionDate: string
   milestones: Array<{
-    id: number
+    _id: string
     title: string
     description: string
-    completed: boolean
+    amount: number
+    status: 'pending' | 'in_progress' | 'pending_review' | 'approved' | 'rejected' | 'completed' | 'paid'
     dueDate: string
-    progress: number
+    files: any[]
   }>
-  files: Array<{
-    id: number
-    name: string
-    type: string
-    size: string
-    uploadedAt: string
-  }>
-  messages: Array<{
-    id: number
-    sender: string
-    message: string
-    timestamp: string
-    isClient: boolean
-  }>
+  files: any[]
 }
 
 export default function ProjectDetailsPage() {
   const { formatAmount } = useCurrency()
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const [project, setProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'milestones' | 'files' | 'messages'>('overview')
+  const [activeMessageTab, setActiveMessageTab] = useState('project') // project | direct
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isFunding, setIsFunding] = useState<string | null>(null) // milestoneId being funded
 
-  // Mock project data
-  const mockProject = useMemo(() => ({
-    id: Number(params.id),
-    name: "E-commerce Website Redesign",
-    description: "Complete redesign of our online store with modern UI/UX and improved functionality. This project includes responsive design, payment integration, and enhanced user experience features.",
-    expert: "Alex Chen",
-    status: "in_progress" as const,
-    budget: 8500,
-    timeline: "6 weeks",
-    lastUpdated: "Dec 10, 2024",
-    progress: 65,
-    startDate: "Nov 15, 2024",
-    endDate: "Dec 27, 2024",
-    category: "Web Development",
-    priority: "high" as const,
-    milestones: [
-      {
-        id: 1,
-        title: "Design Mockups",
-        description: "Create wireframes and design mockups for all pages",
-        completed: true,
-        dueDate: "Nov 22, 2024",
-        progress: 100
-      },
-      {
-        id: 2,
-        title: "Frontend Development",
-        description: "Develop responsive frontend components",
-        completed: true,
-        dueDate: "Dec 6, 2024",
-        progress: 100
-      },
-      {
-        id: 3,
-        title: "Backend Integration",
-        description: "Integrate backend APIs and database",
-        completed: false,
-        dueDate: "Dec 15, 2024",
-        progress: 30
-      },
-      {
-        id: 4,
-        title: "Testing & Launch",
-        description: "Comprehensive testing and deployment",
-        completed: false,
-        dueDate: "Dec 27, 2024",
-        progress: 0
-      }
-    ],
-    files: [
-      {
-        id: 1,
-        name: "Design_Mockups.pdf",
-        type: "pdf",
-        size: "2.4 MB",
-        uploadedAt: "Nov 20, 2024"
-      },
-      {
-        id: 2,
-        name: "Frontend_Code.zip",
-        type: "zip",
-        size: "15.7 MB",
-        uploadedAt: "Dec 5, 2024"
-      },
-      {
-        id: 3,
-        name: "API_Documentation.pdf",
-        type: "pdf",
-        size: "1.8 MB",
-        uploadedAt: "Dec 8, 2024"
-      }
-    ],
-    messages: [
-      {
-        id: 1,
-        sender: "Alex Chen",
-        message: "Hi! I've completed the design mockups and uploaded them. Please review and let me know if you'd like any changes.",
-        timestamp: "Nov 20, 2024 2:30 PM",
-        isClient: false
-      },
-      {
-        id: 2,
-        sender: "You",
-        message: "The designs look great! I especially like the checkout flow. Can we proceed with the frontend development?",
-        timestamp: "Nov 21, 2024 10:15 AM",
-        isClient: true
-      },
-      {
-        id: 3,
-        sender: "Alex Chen",
-        message: "Absolutely! I'll start working on the frontend components right away. I'll keep you updated on the progress.",
-        timestamp: "Nov 21, 2024 11:45 AM",
-        isClient: false
-      }
-    ]
-  }), [params.id])
-
+  // Fetch Project Data
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setProject(mockProject)
-      setIsLoading(false)
-    }, 500)
-  }, [mockProject])
+    const fetchProject = async () => {
+      try {
+        const res = await api.get(`/projects/${params.id}`);
+        setProject(res.data.data); // Assuming response structure { success: true, data: ... }
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        toast.error('Failed to load project details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (params.id) fetchProject();
+  }, [params.id]);
+
+
+  const handleFundMilestone = async (milestone: any) => {
+    setIsFunding(milestone._id)
+    try {
+      if (!user || !user.email) {
+        toast.error('User email required for payment');
+        return;
+      }
+
+      const res = await api.post('/payment/initialize', {
+        projectId: project?._id,
+        milestoneId: milestone._id,
+        amount: milestone.amount,
+        email: user.email
+      });
+
+      if (res.data.success) {
+        window.location.href = res.data.data.authorization_url;
+      }
+    } catch (error: any) {
+      console.error('Payment Init Error:', error);
+      toast.error(error.response?.data?.error || 'Failed to initialize payment');
+    } finally {
+      setIsFunding(null)
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800'
+      case 'active':
       case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-      case 'paused': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+      case 'approved': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800'
+      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800'
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 border-gray-200 dark:border-gray-800'
     }
   }
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Completed'
-      case 'in_progress': return 'In Progress'
-      case 'paused': return 'Paused'
-      default: return 'Pending'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-      default: return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-    }
-  }
-
-  const handleSendMessage = () => {
-    if (newMessage.trim() && project) {
-      const message = {
-        id: project.messages.length + 1,
-        sender: "You",
-        message: newMessage,
-        timestamp: new Date().toLocaleString(),
-        isClient: true
-      }
-      setProject({
-        ...project,
-        messages: [...project.messages, message]
-      })
-      setNewMessage('')
-    }
+    return status ? status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ') : 'Unknown';
   }
 
   if (isLoading) {
@@ -241,12 +148,9 @@ export default function ProjectDetailsPage() {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Project not found</h3>
-        <button
-          onClick={() => router.push('/client-dashboard/projects')}
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          Go back to projects
-        </button>
+        <div className="flex justify-center">
+          <BackButton href="/client-dashboard/projects" label="Go back to projects" />
+        </div>
       </div>
     )
   }
@@ -263,15 +167,10 @@ export default function ProjectDetailsPage() {
         <div className="flex flex-col space-y-4">
           {/* Back Button and Title */}
           <div className="flex items-center space-x-4">
-                         <button
-               onClick={() => router.push('/client-dashboard/projects')}
-               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-             >
-               <ArrowLeftIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-             </button>
+            <BackButton href="/client-dashboard/projects" />
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{project.category}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{project.title}</h1>
+              {/* <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{project.category}</p> */}
             </div>
           </div>
 
@@ -281,18 +180,6 @@ export default function ProjectDetailsPage() {
               <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(project.status)}`}>
                 {getStatusText(project.status)}
               </span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(project.priority)}`}>
-                {project.priority.charAt(0).toUpperCase() + project.priority.slice(1)} Priority
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <PencilIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <EyeIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              </button>
             </div>
           </div>
         </div>
@@ -313,11 +200,10 @@ export default function ProjectDetailsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
@@ -338,47 +224,39 @@ export default function ProjectDetailsPage() {
                     <UserIcon className="h-4 w-4 text-gray-400" />
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Expert</span>
                   </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.expert}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{project.expert?.name || 'Unassigned'}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <CurrencyDollarIcon className="h-4 w-4 text-gray-400" />
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Budget</span>
                   </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{formatAmount(project.budget * 1000)}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{formatAmount(project.budget)}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
-                    <ClockIcon className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Timeline</span>
+                    <CurrencyDollarIcon className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Spent</span>
                   </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.timeline}</p>
+                  <p className="text-gray-900 dark:text-white font-medium text-green-600">{formatAmount(project.spent)}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <CalendarIcon className="h-4 w-4 text-gray-400" />
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Start Date</span>
                   </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.startDate}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <CalendarIcon className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">End Date</span>
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Completion Date</span>
                   </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.endDate}</p>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <ClockIcon className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Last Updated</span>
-                  </div>
-                  <p className="text-gray-900 dark:text-white font-medium">{project.lastUpdated}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{project.completionDate ? new Date(project.completionDate).toLocaleDateString() : 'N/A'}</p>
                 </div>
               </div>
 
@@ -387,147 +265,95 @@ export default function ProjectDetailsPage() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{project.description}</p>
               </div>
-
-              {/* Progress */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Progress</h3>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{project.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                  <div
-                    className="bg-blue-600 dark:bg-blue-500 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
             </motion.div>
           )}
 
           {activeTab === 'milestones' && (
             <motion.div variants={fadeInUp} className="space-y-4">
-              {project.milestones.map((milestone, index) => (
-                <div key={milestone.id} className="border border-gray-200 dark:border-dark-border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        milestone.completed 
-                          ? 'bg-green-100 dark:bg-green-900/20' 
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Milestones</h3>
+                <button
+                  onClick={() => toast('Feature: Client can add new milestones dynamically', { icon: '🚧' })}
+                  className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                  <span>Add Milestone</span>
+                </button>
+              </div>
+
+              {project.milestones.length === 0 ? (
+                <p className="text-gray-500 italic">No milestones yet.</p>
+              ) : (
+                project.milestones.map((milestone, index) => (
+                  <div key={milestone._id} className="border border-gray-200 dark:border-dark-border rounded-lg p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${milestone.status === 'completed' || milestone.status === 'approved'
+                          ? 'bg-green-100 dark:bg-green-900/20'
                           : 'bg-gray-100 dark:bg-gray-800'
-                      }`}>
-                        {milestone.completed ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{index + 1}</span>
+                          }`}>
+                          {milestone.status === 'completed' || milestone.status === 'approved' ? (
+                            <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{index + 1}</span>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white text-lg">{milestone.title}</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{milestone.description}</p>
+                          <div className="mt-2 flex items-center space-x-3">
+                            <span className={`text-xs px-2 py-1 rounded-full border ${getStatusColor(milestone.status)}`}>
+                              {getStatusText(milestone.status)}
+                            </span>
+                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                              {formatAmount(milestone.amount)}
+                            </span>
+                            {milestone.dueDate && <span className="text-xs text-gray-500">Due: {new Date(milestone.dueDate).toLocaleDateString()}</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center">
+                        {milestone.status === 'pending' && (
+                          <button
+                            onClick={() => handleFundMilestone(milestone)}
+                            disabled={isFunding === milestone._id}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                          >
+                            {isFunding === milestone._id ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <CreditCardIcon className="w-4 h-4" />
+                            )}
+                            <span>Fund Milestone</span>
+                          </button>
+                        )}
+
+                        {milestone.status === 'pending_review' && (
+                          <div className="flex space-x-2">
+                            <button className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm">Approve</button>
+                            <button className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">Reject</button>
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">{milestone.title}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.description}</p>
-                      </div>
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">{milestone.dueDate}</span>
                   </div>
-                  
-                  {!milestone.completed && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Progress</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{milestone.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${milestone.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </motion.div>
           )}
 
           {activeTab === 'files' && (
-            <motion.div variants={fadeInUp} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Project Files</h3>
-                <button className="flex items-center space-x-2 px-3 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
-                  <PlusIcon className="h-4 w-4" />
-                  <span>Upload File</span>
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                {project.files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-dark-border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                        <DocumentTextIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{file.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{file.size} • {file.uploadedAt}</p>
-                      </div>
-                    </div>
-                    <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                      <EyeIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            <div className="text-center py-8 text-gray-500">
+              File management coming in next update.
+            </div>
           )}
 
           {activeTab === 'messages' && (
-            <motion.div variants={fadeInUp} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Messages</h3>
-                <button className="flex items-center space-x-2 px-3 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
-                  <PhoneIcon className="h-4 w-4" />
-                  <span>Call Expert</span>
-                </button>
-              </div>
-              
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {project.messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.isClient ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs sm:max-w-md lg:max-w-lg px-4 py-2 rounded-lg ${
-                      message.isClient
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                    }`}>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium">{message.sender}</span>
-                        <span className={`text-xs ${
-                          message.isClient ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-                        }`}>
-                          {message.timestamp}
-                        </span>
-                      </div>
-                      <p className="text-sm">{message.message}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-dark-surface text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-                >
-                  <PaperAirplaneIcon className="h-4 w-4" />
-                </button>
-              </div>
-            </motion.div>
+            <div className="text-center py-8 text-gray-500">
+              Real-time messaging integrating soon.
+            </div>
           )}
         </div>
       </motion.div>
