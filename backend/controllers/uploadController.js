@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const { getGridfsBucket } = require('../config/gridfsConfig');
 const { uploadToGridFS } = require('../utils/gridfsHelper');
 
@@ -76,9 +77,23 @@ exports.getFile = async (req, res) => {
 
         const file = files[0];
 
-        // Set CORS headers for cross-origin access (critical for frontend on different port)
+        // Images (avatars, thumbnails) remain public; non-images (PDFs, resumes) require auth
+        const isImage = file.contentType && file.contentType.startsWith('image/');
+        if (!isImage) {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required to access this file' });
+            }
+            try {
+                const token = authHeader.split(' ')[1];
+                jwt.verify(token, process.env.JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+            }
+        }
+
+        // Keep cross-origin policy for <img> tag embedding; let global CORS handle the origin header
         res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-        res.set('Access-Control-Allow-Origin', '*');
 
         // Set appropriate headers
         res.set('Content-Type', file.contentType || 'application/octet-stream');
@@ -178,6 +193,21 @@ exports.getFileInfo = async (req, res) => {
         }
 
         const file = files[0];
+
+        // Non-image file metadata also requires authentication
+        const isImage = file.contentType && file.contentType.startsWith('image/');
+        if (!isImage) {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ success: false, error: 'Authentication required to access this file' });
+            }
+            try {
+                const token = authHeader.split(' ')[1];
+                jwt.verify(token, process.env.JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+            }
+        }
 
         res.status(200).json({
             success: true,

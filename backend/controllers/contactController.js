@@ -1,5 +1,6 @@
 const Contact = require('../models/Contact');
 const nodemailer = require('nodemailer');
+const { escapeHtml } = require('../utils/htmlHelper');
 
 // @desc    Create new contact message
 // @route   POST /api/contact
@@ -35,14 +36,14 @@ exports.createContact = async (req, res) => {
                 subject: `New Project Inquiry from ${name}`,
                 html: `
           <h1>New Project Inquiry</h1>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Company:</strong> ${company || 'N/A'}</p>
-          <p><strong>Project Type:</strong> ${projectType}</p>
-          <p><strong>Budget:</strong> ${budget || 'N/A'}</p>
-          <p><strong>Timeline:</strong> ${timeline || 'N/A'}</p>
+          <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+          <p><strong>Company:</strong> ${escapeHtml(company) || 'N/A'}</p>
+          <p><strong>Project Type:</strong> ${escapeHtml(projectType)}</p>
+          <p><strong>Budget:</strong> ${escapeHtml(budget) || 'N/A'}</p>
+          <p><strong>Timeline:</strong> ${escapeHtml(timeline) || 'N/A'}</p>
           <p><strong>Message:</strong></p>
-          <p>${message}</p>
+          <p>${escapeHtml(message)}</p>
         `,
             };
 

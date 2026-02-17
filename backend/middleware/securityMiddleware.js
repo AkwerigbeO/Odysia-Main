@@ -5,11 +5,32 @@ const hpp = require('hpp');
 const mongoSanitize = require('express-mongo-sanitize');
 const cors = require('cors');
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // limit each IP to 500 requests per windowMs
+// Global rate limiter: 500 req / 15 min per IP
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
     message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Login limiter: 10 req / 15 min per IP — slows credential brute-force
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: 'Too many login attempts from this IP, please try again after 15 minutes'
+});
+
+// Registration limiter: 5 req / 1 hour per IP — prevents bulk fake accounts
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    message: 'Too many registration attempts from this IP, please try again after 1 hour'
+});
+
+// Forgot-password limiter: 3 req / 1 hour per IP — prevents email flooding
+const forgotPasswordLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    message: 'Too many password reset requests from this IP, please try again after 1 hour'
 });
 
 // Setup security middleware
@@ -26,10 +47,17 @@ const setupSecurity = (app) => {
     // Sanitize data
     app.use(mongoSanitize());
 
-    // Rate limiting
-    app.use('/api', limiter);
+    // Global rate limiting
+    app.use('/api', globalLimiter);
 
     // CORS
+    if (!process.env.CLIENT_URL) {
+        console.warn(
+            'WARNING: CLIENT_URL is not set. CORS is falling back to http://localhost:3000. ' +
+            'This must be set in production.'
+        );
+    }
+
     const corsOptions = {
         origin: process.env.CLIENT_URL || 'http://localhost:3000',
         optionsSuccessStatus: 200,
@@ -38,4 +66,4 @@ const setupSecurity = (app) => {
     app.use(cors(corsOptions));
 };
 
-module.exports = setupSecurity;
+module.exports = { setupSecurity, loginLimiter, registerLimiter, forgotPasswordLimiter };

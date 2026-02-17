@@ -15,12 +15,13 @@ const {
     registerSchema,
     loginSchema,
 } = require('../middleware/validationMiddleware');
+const { loginLimiter, registerLimiter, forgotPasswordLimiter } = require('../middleware/securityMiddleware');
 
-router.post('/register', validateRequest(registerSchema), registerUser);
-router.post('/login', validateRequest(loginSchema), loginUser);
+router.post('/register', registerLimiter, validateRequest(registerSchema), registerUser);
+router.post('/login', loginLimiter, validateRequest(loginSchema), loginUser);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
-router.post('/forgotpassword', forgotPassword);
+router.post('/forgotpassword', forgotPasswordLimiter, forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
 router.post('/expert-setup', completeExpertSignup);
 

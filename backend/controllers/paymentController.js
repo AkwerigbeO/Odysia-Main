@@ -9,7 +9,7 @@ const { createNotification } = require('./notificationController');
 // POST /api/payment/initialize
 exports.initializePayment = async (req, res, next) => {
     try {
-        const { projectId, milestoneId, amount, email } = req.body;
+        const { projectId, milestoneId, amount } = req.body;
 
         // Verify Project and Milestone exist
         const project = await Project.findById(projectId);
@@ -18,13 +18,19 @@ exports.initializePayment = async (req, res, next) => {
         const milestone = project.milestones.id(milestoneId);
         if (!milestone) return res.status(404).json({ success: false, error: 'Milestone not found' });
 
+        // Validate amount is a positive finite number
+        const parsedAmount = Number(amount);
+        if (!parsedAmount || parsedAmount <= 0 || !Number.isFinite(parsedAmount)) {
+            return res.status(400).json({ success: false, error: 'Amount must be a positive number' });
+        }
+
         // Generate unique reference
         const reference = uuidv4();
 
         // Initialize transaction with Paystack
         const response = await axios.post('https://api.paystack.co/transaction/initialize', {
-            email: email, // Client's email
-            amount: amount * 100, // Amount in kobo
+            email: req.user.email, // Always use the authenticated user's email
+            amount: parsedAmount * 100, // Amount in kobo
             reference: reference,
             callback_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/callback`, // Frontend callback
             metadata: {
@@ -41,7 +47,7 @@ exports.initializePayment = async (req, res, next) => {
 
         // Create Pending Transaction Record
         await Transaction.create({
-            amount: amount,
+            amount: parsedAmount,
             status: 'pending',
             payer: req.user._id,
             recipient: project.expert ? project.expert : req.user._id, // Ideally Platform escrow first, but linking to user for now? Or Admin?
@@ -80,6 +86,11 @@ exports.verifyPayment = async (req, res, next) => {
         const transaction = await Transaction.findOne({ reference });
         if (!transaction) {
             return res.status(404).json({ success: false, error: 'Transaction not found' });
+        }
+
+        // Ensure only the payer can verify their own transaction
+        if (transaction.payer.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, error: 'Not authorized to verify this transaction' });
         }
 
         if (transaction.status === 'completed') {

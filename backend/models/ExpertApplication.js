@@ -31,6 +31,10 @@ const expertApplicationSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
+    },
+    setupTokenUsed: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

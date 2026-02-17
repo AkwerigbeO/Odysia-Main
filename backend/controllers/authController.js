@@ -6,8 +6,8 @@ const sendEmail = require('../utils/emailService');
 
 // Generate JWT
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', {
-        expiresIn: process.env.JWT_EXPIRE || '30d',
+    return jwt.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRE || '7d',
     });
 };
 
@@ -215,7 +215,7 @@ const completeExpertSignup = async (req, res, next) => {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const applicationId = decoded.applicationId;
 
         const application = await ExpertApplication.findById(applicationId);
@@ -228,6 +228,12 @@ const completeExpertSignup = async (req, res, next) => {
         if (application.status !== 'approved') {
             res.status(400);
             throw new Error('Application is not approved');
+        }
+
+        // Enforce one-time use of the setup link
+        if (application.setupTokenUsed) {
+            res.status(400);
+            throw new Error('Setup link has already been used');
         }
 
         // Check if user already exists (extra safety)
@@ -255,6 +261,10 @@ const completeExpertSignup = async (req, res, next) => {
             resume: application.resume,
             verified: true // Since they were approved manually
         });
+
+        // Mark setup token as used to prevent replay
+        application.setupTokenUsed = true;
+        await application.save();
 
         // Generate Login Token
         const loginToken = generateToken(user._id);

@@ -12,7 +12,17 @@ const validateRequest = (schema) => (req, res, next) => {
 const registerSchema = Joi.object({
     name: Joi.string().required(),
     email: Joi.string().email().required(),
-    password: Joi.string().min(6).required(),
+    password: Joi.string()
+        .min(8)
+        .pattern(/[A-Z]/, 'uppercase letter')
+        .pattern(/[a-z]/, 'lowercase letter')
+        .pattern(/[0-9]/, 'number')
+        .pattern(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'special character')
+        .required()
+        .messages({
+            'string.min': 'Password must be at least 8 characters long',
+            'string.pattern.name': 'Password must contain at least one {#name}'
+        }),
     confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({ 'any.only': 'Passwords do not match' }),
     phone: Joi.string().required(),
     clientType: Joi.string().valid('individual', 'business', 'startup').required(),

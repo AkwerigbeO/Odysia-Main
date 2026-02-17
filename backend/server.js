@@ -6,11 +6,17 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 console.log('Environment loaded from:', path.resolve(__dirname, '.env'));
 console.log('EMAIL_USER loaded:', !!process.env.EMAIL_USER);
 
+// Fail fast if critical secrets are missing
+if (!process.env.JWT_SECRET) {
+    console.error('FATAL ERROR: JWT_SECRET environment variable is not set. Refusing to start.');
+    process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-const setupSecurity = require('./middleware/securityMiddleware');
+const { setupSecurity } = require('./middleware/securityMiddleware');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 // Apply Security Middleware

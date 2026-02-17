@@ -92,12 +92,11 @@ const approveApplication = async (req, res, next) => {
         application.status = 'approved';
         await application.save();
 
-        // Generate setup token
-        // Use a different secret or shorter expiry if desired, but standard secret is fine for this POC
+        // Generate setup token (48h expiry, one-time use enforced in completeExpertSignup)
         const setupToken = jwt.sign(
             { applicationId: application._id },
-            process.env.JWT_SECRET || 'secret',
-            { expiresIn: '7d' }
+            process.env.JWT_SECRET,
+            { expiresIn: '48h' }
         );
 
         // Construct setup URL
@@ -121,8 +120,7 @@ const approveApplication = async (req, res, next) => {
             res.status(200).json({
                 success: true,
                 data: application,
-                message: 'Application approved and email sent',
-                setupUrl // Return URL for testing purposes
+                message: 'Application approved and email sent'
             });
         } catch (emailError) {
             console.error('Email send failed', emailError);

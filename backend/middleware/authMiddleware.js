@@ -13,7 +13,7 @@ const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
 
             // Verify token
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             // Get user from the token
             req.user = await User.findById(decoded.id).select('-password');
@@ -42,5 +42,25 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin };
+// Populates req.user if a valid token is present, but never blocks the request.
+// Controllers can inspect req.user to make access decisions.
+const optionalProtect = async (req, res, next) => {
+    req.user = null;
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.id).select('-password');
+        } catch (error) {
+            // Invalid or expired token — treat as unauthenticated
+            req.user = null;
+        }
+    }
+    next();
+};
+
+module.exports = { protect, admin, optionalProtect };
 
